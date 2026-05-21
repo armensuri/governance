@@ -1,0 +1,1038 @@
+{
+  "pci_dss_compliance_checks": {
+    "metadata": {
+      "version": "1.0",
+      "created": "2026-05-21",
+      "framework": "PCI DSS v4.0",
+      "requirements": [
+        "Requirement 1 - Install and Maintain Network Security Controls",
+        "Requirement 2 - Apply Secure Configurations to All System Components",
+        "Requirement 3 - Protect Stored Account Data",
+        "Requirement 4 - Protect Cardholder Data with Strong Cryptography During Transmission",
+        "Requirement 5 - Protect All Systems Against Malware",
+        "Requirement 6 - Develop and Maintain Secure Systems and Software",
+        "Requirement 7 - Restrict Access to System Components and Cardholder Data by Business Need to Know",
+        "Requirement 8 - Identify Users and Authenticate Access to System Components",
+        "Requirement 9 - Restrict Physical Access to Cardholder Data",
+        "Requirement 10 - Log and Monitor All Access to System Components and Cardholder Data",
+        "Requirement 11 - Test Security of Systems and Networks Regularly",
+        "Requirement 12 - Support Information Security with Organizational Policies and Programs"
+      ],
+      "note": "AWS is a PCI DSS Level 1 Service Provider. A shared responsibility model applies. Customers must ensure their use of AWS services is compliant within their own CDE (Cardholder Data Environment)."
+    },
+    "aws_resource_checks": {
+      "network_security": {
+        "category": "Requirement 1 - Network Security Controls",
+        "checks": [
+          {
+            "id": "NET-001",
+            "name": "CDE Isolated in Dedicated VPC",
+            "description": "Cardholder Data Environment (CDE) must be isolated in a dedicated VPC, separate from non-CDE workloads",
+            "severity": "critical",
+            "pci_dss_requirement": "1.3.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Create a dedicated VPC for CDE resources with no cross-VPC peering to non-CDE workloads",
+            "aws_config_rule": null
+          },
+          {
+            "id": "NET-002",
+            "name": "Security Groups Restrict Inbound to CDE",
+            "description": "No security group allows unrestricted inbound access (0.0.0.0/0) to CDE systems on any port",
+            "severity": "critical",
+            "pci_dss_requirement": "1.3.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Restrict all security group inbound rules to known, required CIDRs and ports only",
+            "aws_config_rule": "restricted-ssh"
+          },
+          {
+            "id": "NET-003",
+            "name": "Security Groups Deny All by Default",
+            "description": "All security groups deny inbound traffic by default; only explicitly required traffic is allowed",
+            "severity": "critical",
+            "pci_dss_requirement": "1.3.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Audit all security groups; remove any overly permissive rules",
+            "aws_config_rule": "vpc-default-security-group-closed"
+          },
+          {
+            "id": "NET-004",
+            "name": "VPC Flow Logs Enabled",
+            "description": "Enable VPC Flow Logs for all VPCs containing CDE resources to capture network traffic",
+            "severity": "high",
+            "pci_dss_requirement": "10.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable VPC Flow Logs and send to CloudWatch Logs or S3 with 12-month retention",
+            "aws_config_rule": "vpc-flow-logs-enabled"
+          },
+          {
+            "id": "NET-005",
+            "name": "CDE Resources in Private Subnets",
+            "description": "All CDE components (application servers, databases) must be deployed in private subnets",
+            "severity": "critical",
+            "pci_dss_requirement": "1.3.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Move CDE resources to private subnets; use ALB/NLB in public subnets as entry point",
+            "aws_config_rule": null
+          },
+          {
+            "id": "NET-006",
+            "name": "WAF Enabled on Public-Facing Applications",
+            "description": "Deploy AWS WAF on all public-facing web applications that are part of or connected to the CDE",
+            "severity": "critical",
+            "pci_dss_requirement": "6.4.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Attach AWS WAF to CloudFront, ALB, or API Gateway endpoints serving CDE traffic",
+            "aws_config_rule": "alb-waf-enabled"
+          },
+          {
+            "id": "NET-007",
+            "name": "Network ACLs Restrict CDE Traffic",
+            "description": "Use NACLs as an additional layer to restrict inbound and outbound traffic to the CDE",
+            "severity": "high",
+            "pci_dss_requirement": "1.3.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Configure NACLs with explicit allow rules for required traffic; deny all others",
+            "aws_config_rule": null
+          },
+          {
+            "id": "NET-008",
+            "name": "No Direct Internet Access to CDE",
+            "description": "CDE systems must not have direct inbound internet access; all internet-facing traffic routes through controlled entry points",
+            "severity": "critical",
+            "pci_dss_requirement": "1.3.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Remove internet gateways from private subnets; use NAT Gateway for outbound-only internet access",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "secure_configuration": {
+        "category": "Requirement 2 - Secure Configurations",
+        "checks": [
+          {
+            "id": "CFG-001",
+            "name": "No Default Credentials on CDE Systems",
+            "description": "All default vendor passwords and credentials must be changed before CDE systems are deployed",
+            "severity": "critical",
+            "pci_dss_requirement": "2.1.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Audit all CDE systems for default credentials; rotate immediately; enforce via IaC",
+            "aws_config_rule": null
+          },
+          {
+            "id": "CFG-002",
+            "name": "CDE Systems Hardened per Baseline",
+            "description": "All CDE system components are configured according to a documented hardening standard (CIS Benchmarks or equivalent)",
+            "severity": "high",
+            "pci_dss_requirement": "2.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Apply CIS Benchmarks via AWS Systems Manager State Manager or golden AMIs",
+            "aws_config_rule": null
+          },
+          {
+            "id": "CFG-003",
+            "name": "Unnecessary Services Disabled on CDE Systems",
+            "description": "Only required ports, protocols, and services are enabled on CDE system components",
+            "severity": "high",
+            "pci_dss_requirement": "2.2.4",
+            "pci_dss_version": "v4.0",
+            "remediation": "Disable unused services and ports via OS configuration and security groups",
+            "aws_config_rule": null
+          },
+          {
+            "id": "CFG-004",
+            "name": "AWS Config Enabled for CDE Accounts",
+            "description": "AWS Config must be enabled to continuously monitor CDE resource configurations",
+            "severity": "high",
+            "pci_dss_requirement": "2.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable AWS Config with all resource types recorded in all CDE regions",
+            "aws_config_rule": "config-enabled-in-region"
+          },
+          {
+            "id": "CFG-005",
+            "name": "EC2 IMDSv2 Enforced",
+            "description": "Require IMDSv2 on all EC2 instances in the CDE to prevent SSRF-based credential theft",
+            "severity": "high",
+            "pci_dss_requirement": "2.2.7",
+            "pci_dss_version": "v4.0",
+            "remediation": "Set HttpTokens to 'required' on all CDE EC2 instance metadata configurations",
+            "aws_config_rule": "ec2-imdsv2-check"
+          }
+        ]
+      },
+      "data_protection": {
+        "category": "Requirement 3 - Protect Stored Account Data",
+        "checks": [
+          {
+            "id": "DATA-001",
+            "name": "No Storage of Sensitive Authentication Data Post-Authorization",
+            "description": "Full track data, CVV/CVC, and PINs must not be stored after transaction authorization",
+            "severity": "critical",
+            "pci_dss_requirement": "3.3.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Audit application code and databases; purge any stored SAD; implement tokenization",
+            "aws_config_rule": null
+          },
+          {
+            "id": "DATA-002",
+            "name": "PAN Masked When Displayed",
+            "description": "Primary Account Numbers (PAN) must be masked when displayed, showing only first 6 and last 4 digits",
+            "severity": "critical",
+            "pci_dss_requirement": "3.5.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Implement PAN masking in application display layer and APIs",
+            "aws_config_rule": null
+          },
+          {
+            "id": "DATA-003",
+            "name": "PAN Encrypted at Rest with Strong Cryptography",
+            "description": "Stored PAN must be rendered unreadable using strong cryptography (AES-256 or equivalent)",
+            "severity": "critical",
+            "pci_dss_requirement": "3.5.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Encrypt PAN using AES-256 with KMS CMK; use tokenization where possible",
+            "aws_config_rule": null
+          },
+          {
+            "id": "DATA-004",
+            "name": "S3 Encryption Enabled for CDE Buckets",
+            "description": "All S3 buckets in the CDE must use SSE-KMS with a customer-managed key",
+            "severity": "critical",
+            "pci_dss_requirement": "3.5.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable SSE-KMS on all CDE S3 buckets; enforce via bucket policy",
+            "aws_config_rule": "s3-bucket-server-side-encryption-enabled"
+          },
+          {
+            "id": "DATA-005",
+            "name": "EBS Encryption Enabled for CDE Instances",
+            "description": "All EBS volumes attached to CDE EC2 instances must be encrypted at rest",
+            "severity": "critical",
+            "pci_dss_requirement": "3.5.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable EBS default encryption at account level; use KMS CMK",
+            "aws_config_rule": "ec2-ebs-encryption-by-default"
+          },
+          {
+            "id": "DATA-006",
+            "name": "RDS Encryption Enabled for CDE Databases",
+            "description": "All RDS/Aurora instances storing cardholder data must be encrypted at rest",
+            "severity": "critical",
+            "pci_dss_requirement": "3.5.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable RDS storage encryption with KMS CMK at instance creation",
+            "aws_config_rule": "rds-storage-encrypted"
+          },
+          {
+            "id": "DATA-007",
+            "name": "Key Management Policy for Encryption Keys",
+            "description": "Cryptographic keys used to protect cardholder data must have documented key management procedures",
+            "severity": "critical",
+            "pci_dss_requirement": "3.7.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Use AWS KMS with documented key lifecycle, rotation, and access control procedures",
+            "aws_config_rule": "cmk-backing-key-rotation-enabled"
+          },
+          {
+            "id": "DATA-008",
+            "name": "Cardholder Data Discovery Scan",
+            "description": "Perform periodic scans to detect unprotected PAN stored in unexpected locations",
+            "severity": "high",
+            "pci_dss_requirement": "3.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Use Amazon Macie to discover and classify PAN in S3; scan databases and logs quarterly",
+            "aws_config_rule": null
+          },
+          {
+            "id": "DATA-009",
+            "name": "Amazon Macie Enabled for CDE S3 Buckets",
+            "description": "Enable Amazon Macie to automatically detect sensitive cardholder data in S3",
+            "severity": "high",
+            "pci_dss_requirement": "3.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable Macie and configure custom data identifiers for PAN patterns",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "transmission_security": {
+        "category": "Requirement 4 - Protect Cardholder Data in Transit",
+        "checks": [
+          {
+            "id": "TLS-001",
+            "name": "TLS 1.2+ Enforced on All CDE Endpoints",
+            "description": "All transmission of cardholder data over public networks must use TLS 1.2 or higher",
+            "severity": "critical",
+            "pci_dss_requirement": "4.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enforce TLS 1.2+ on ALB, API Gateway, CloudFront; disable TLS 1.0 and 1.1",
+            "aws_config_rule": "alb-http-to-https-redirection-check"
+          },
+          {
+            "id": "TLS-002",
+            "name": "S3 Buckets Enforce SSL-Only Access",
+            "description": "Deny HTTP (non-SSL) requests to CDE S3 buckets via bucket policy",
+            "severity": "critical",
+            "pci_dss_requirement": "4.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Add bucket policy denying s3:* when aws:SecureTransport is false",
+            "aws_config_rule": "s3-bucket-ssl-requests-only"
+          },
+          {
+            "id": "TLS-003",
+            "name": "Strong Cipher Suites Enforced",
+            "description": "Only strong, approved cipher suites are used on all CDE endpoints; weak ciphers are disabled",
+            "severity": "high",
+            "pci_dss_requirement": "4.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Configure ALB/CloudFront security policies to use ELBSecurityPolicy-TLS13-1-2 or equivalent",
+            "aws_config_rule": null
+          },
+          {
+            "id": "TLS-004",
+            "name": "No Cardholder Data Sent via Unencrypted Channels",
+            "description": "Cardholder data must never be transmitted via email, chat, or any unencrypted channel",
+            "severity": "critical",
+            "pci_dss_requirement": "4.2.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Implement DLP controls; audit application code for unencrypted data transmission",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "malware_protection": {
+        "category": "Requirement 5 - Protect Against Malware",
+        "checks": [
+          {
+            "id": "MAL-001",
+            "name": "Anti-Malware Solution on CDE Systems",
+            "description": "Deploy anti-malware on all CDE EC2 instances and endpoints that could be affected by malware",
+            "severity": "critical",
+            "pci_dss_requirement": "5.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Deploy Amazon GuardDuty malware protection and/or third-party AV via SSM",
+            "aws_config_rule": null
+          },
+          {
+            "id": "MAL-002",
+            "name": "GuardDuty Malware Protection Enabled",
+            "description": "Enable GuardDuty Malware Protection for EC2 instances in the CDE",
+            "severity": "high",
+            "pci_dss_requirement": "5.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable GuardDuty with Malware Protection feature for CDE accounts",
+            "aws_config_rule": "guardduty-enabled-centralized"
+          },
+          {
+            "id": "MAL-003",
+            "name": "Anti-Malware Definitions Kept Current",
+            "description": "Ensure anti-malware solutions are maintained with the latest definitions and signatures",
+            "severity": "high",
+            "pci_dss_requirement": "5.2.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Configure automatic updates for anti-malware via SSM or vendor management console",
+            "aws_config_rule": null
+          },
+          {
+            "id": "MAL-004",
+            "name": "EC2 Instances Regularly Patched",
+            "description": "All CDE EC2 instances must be patched against known vulnerabilities promptly",
+            "severity": "critical",
+            "pci_dss_requirement": "6.3.3",
+            "pci_dss_version": "v4.0",
+            "remediation": "Use SSM Patch Manager with a compliant patch baseline; critical patches within 1 month",
+            "aws_config_rule": "ec2-managedinstance-patch-compliance-status-check"
+          }
+        ]
+      },
+      "secure_development": {
+        "category": "Requirement 6 - Secure Systems and Software",
+        "checks": [
+          {
+            "id": "DEV-001",
+            "name": "Critical Vulnerabilities Patched Promptly",
+            "description": "Critical and high vulnerabilities in CDE systems must be patched within defined SLAs (e.g., critical within 30 days)",
+            "severity": "critical",
+            "pci_dss_requirement": "6.3.3",
+            "pci_dss_version": "v4.0",
+            "remediation": "Define patch SLAs; use AWS Inspector and SSM Patch Manager for tracking and remediation",
+            "aws_config_rule": null
+          },
+          {
+            "id": "DEV-002",
+            "name": "AWS Inspector Enabled for CDE Accounts",
+            "description": "Enable Amazon Inspector for continuous vulnerability scanning of CDE EC2 instances and container images",
+            "severity": "high",
+            "pci_dss_requirement": "6.3.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable AWS Inspector v2 in all CDE accounts and regions",
+            "aws_config_rule": null
+          },
+          {
+            "id": "DEV-003",
+            "name": "WAF Active and Tuned for CDE Applications",
+            "description": "AWS WAF rules are actively maintained to protect CDE web applications from OWASP Top 10 attacks",
+            "severity": "critical",
+            "pci_dss_requirement": "6.4.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Deploy AWS Managed Rules and custom rules on WAF; review and tune regularly",
+            "aws_config_rule": "alb-waf-enabled"
+          },
+          {
+            "id": "DEV-004",
+            "name": "SAST/DAST in CI/CD Pipeline",
+            "description": "Static and dynamic application security testing is integrated into the CI/CD pipeline for CDE applications",
+            "severity": "high",
+            "pci_dss_requirement": "6.2.4",
+            "pci_dss_version": "v4.0",
+            "remediation": "Integrate SAST tools (e.g., Semgrep, Checkmarx) and DAST tools into CI/CD pipelines",
+            "aws_config_rule": null
+          },
+          {
+            "id": "DEV-005",
+            "name": "Separation of CDE Environments",
+            "description": "Development, test, and production CDE environments must be separated using different AWS accounts or VPCs",
+            "severity": "high",
+            "pci_dss_requirement": "6.2.3",
+            "pci_dss_version": "v4.0",
+            "remediation": "Use separate AWS accounts for dev/test/prod; enforce via AWS Organizations SCPs",
+            "aws_config_rule": null
+          },
+          {
+            "id": "DEV-006",
+            "name": "No Live PANs in Test Environments",
+            "description": "Real cardholder data (live PAN) must not be used in non-production environments",
+            "severity": "critical",
+            "pci_dss_requirement": "6.2.3.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Use synthetic or tokenized data in test environments; scan with Macie to detect real PAN",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "access_control": {
+        "category": "Requirement 7 - Restrict Access by Business Need to Know",
+        "checks": [
+          {
+            "id": "ACC-001",
+            "name": "IAM Least Privilege for CDE Resources",
+            "description": "IAM policies for CDE resources must grant only the minimum permissions required",
+            "severity": "critical",
+            "pci_dss_requirement": "7.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Review and tighten IAM policies using IAM Access Analyzer; remove wildcard permissions",
+            "aws_config_rule": "iam-policy-no-statements-with-admin-access"
+          },
+          {
+            "id": "ACC-002",
+            "name": "No Shared IAM Credentials for CDE",
+            "description": "All access to CDE systems must use individual, unique credentials; no shared accounts",
+            "severity": "critical",
+            "pci_dss_requirement": "8.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Audit IAM users and roles; eliminate shared credentials; assign individual accounts",
+            "aws_config_rule": null
+          },
+          {
+            "id": "ACC-003",
+            "name": "Role-Based Access Control for CDE",
+            "description": "Access to cardholder data is based on documented roles with defined access needs",
+            "severity": "high",
+            "pci_dss_requirement": "7.2.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Implement IAM roles mapped to job functions; document access matrix",
+            "aws_config_rule": null
+          },
+          {
+            "id": "ACC-004",
+            "name": "Quarterly Access Reviews for CDE",
+            "description": "Review all user access to CDE systems and cardholder data at least every 6 months",
+            "severity": "high",
+            "pci_dss_requirement": "7.2.4",
+            "pci_dss_version": "v4.0",
+            "remediation": "Conduct formal access reviews; document and action revocations",
+            "aws_config_rule": null
+          },
+          {
+            "id": "ACC-005",
+            "name": "S3 CDE Buckets Block Public Access",
+            "description": "All S3 buckets in the CDE must block all forms of public access",
+            "severity": "critical",
+            "pci_dss_requirement": "7.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable S3 Block Public Access at account and bucket level for all CDE buckets",
+            "aws_config_rule": "s3-bucket-public-read-prohibited"
+          },
+          {
+            "id": "ACC-006",
+            "name": "RDS Not Publicly Accessible",
+            "description": "RDS instances in the CDE must not be publicly accessible",
+            "severity": "critical",
+            "pci_dss_requirement": "7.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Set PubliclyAccessible to false on all CDE RDS instances",
+            "aws_config_rule": "rds-instance-public-access-check"
+          }
+        ]
+      },
+      "authentication": {
+        "category": "Requirement 8 - Identify and Authenticate Users",
+        "checks": [
+          {
+            "id": "AUTH-001",
+            "name": "MFA Required for All CDE Access",
+            "description": "Multi-factor authentication must be required for all access into the CDE, including AWS Console and VPN",
+            "severity": "critical",
+            "pci_dss_requirement": "8.4.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enforce MFA via IAM policy conditions and AWS Organizations SCPs for all CDE accounts",
+            "aws_config_rule": "iam-user-mfa-enabled"
+          },
+          {
+            "id": "AUTH-002",
+            "name": "MFA on Root Account",
+            "description": "MFA must be enabled on the AWS root account for all CDE accounts",
+            "severity": "critical",
+            "pci_dss_requirement": "8.4.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable hardware or virtual MFA on the root account; restrict root usage",
+            "aws_config_rule": "root-account-mfa-enabled"
+          },
+          {
+            "id": "AUTH-003",
+            "name": "IAM Password Policy Enforced",
+            "description": "Enforce a strong IAM password policy: minimum 12 characters, complexity requirements, 90-day rotation",
+            "severity": "high",
+            "pci_dss_requirement": "8.3.6",
+            "pci_dss_version": "v4.0",
+            "remediation": "Set IAM account password policy to meet PCI DSS minimum requirements",
+            "aws_config_rule": "iam-password-policy"
+          },
+          {
+            "id": "AUTH-004",
+            "name": "IAM Access Keys Rotated Every 90 Days",
+            "description": "All IAM access keys providing access to CDE resources must be rotated every 90 days",
+            "severity": "high",
+            "pci_dss_requirement": "8.3.9",
+            "pci_dss_version": "v4.0",
+            "remediation": "Rotate access keys on a 90-day schedule; enforce via AWS Config rule",
+            "aws_config_rule": "access-keys-rotated"
+          },
+          {
+            "id": "AUTH-005",
+            "name": "No Unused IAM Credentials",
+            "description": "Disable or remove IAM credentials that have not been used in 90 days",
+            "severity": "high",
+            "pci_dss_requirement": "8.2.6",
+            "pci_dss_version": "v4.0",
+            "remediation": "Review IAM credential report monthly; disable stale credentials",
+            "aws_config_rule": "iam-user-unused-credentials-check"
+          },
+          {
+            "id": "AUTH-006",
+            "name": "Automatic Session Timeout Configured",
+            "description": "CDE sessions must be locked after 15 minutes of inactivity",
+            "severity": "high",
+            "pci_dss_requirement": "8.2.8",
+            "pci_dss_version": "v4.0",
+            "remediation": "Set IAM role session duration limits; enforce application-level idle timeout of 15 minutes",
+            "aws_config_rule": null
+          },
+          {
+            "id": "AUTH-007",
+            "name": "Service Account Credentials Managed Securely",
+            "description": "Passwords and keys for service accounts must be stored in AWS Secrets Manager, not hardcoded",
+            "severity": "critical",
+            "pci_dss_requirement": "8.2.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Migrate all hardcoded credentials to AWS Secrets Manager; rotate automatically",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "logging_and_monitoring": {
+        "category": "Requirement 10 - Log and Monitor All Access",
+        "checks": [
+          {
+            "id": "LOG-001",
+            "name": "CloudTrail Enabled in All CDE Regions",
+            "description": "CloudTrail must be enabled in all regions to log all API activity in the CDE",
+            "severity": "critical",
+            "pci_dss_requirement": "10.2.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Create a multi-region CloudTrail trail covering all management and data events",
+            "aws_config_rule": "cloud-trail-enabled"
+          },
+          {
+            "id": "LOG-002",
+            "name": "CloudTrail Log File Integrity Validation",
+            "description": "Enable log file integrity validation to ensure audit logs have not been tampered with",
+            "severity": "high",
+            "pci_dss_requirement": "10.3.3",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable log file validation on all CloudTrail trails",
+            "aws_config_rule": "cloud-trail-log-file-validation-enabled"
+          },
+          {
+            "id": "LOG-003",
+            "name": "CloudTrail Logs Encrypted with KMS",
+            "description": "Encrypt CloudTrail logs at rest using a KMS CMK",
+            "severity": "high",
+            "pci_dss_requirement": "10.3.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Configure CloudTrail to use a KMS CMK for log encryption",
+            "aws_config_rule": "cloud-trail-encryption-enabled"
+          },
+          {
+            "id": "LOG-004",
+            "name": "S3 Data Events Logged for CDE Buckets",
+            "description": "Enable CloudTrail data events for all S3 buckets in the CDE",
+            "severity": "high",
+            "pci_dss_requirement": "10.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable S3 data events (read/write) in CloudTrail for all CDE buckets",
+            "aws_config_rule": null
+          },
+          {
+            "id": "LOG-005",
+            "name": "Log Retention Minimum 12 Months",
+            "description": "Audit logs must be retained for at least 12 months, with 3 months immediately available",
+            "severity": "critical",
+            "pci_dss_requirement": "10.5.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Set CloudWatch log groups and S3 lifecycle policies to retain logs for 12+ months",
+            "aws_config_rule": "cloudwatch-log-group-retention-period-check"
+          },
+          {
+            "id": "LOG-006",
+            "name": "Centralized Log Management (SIEM)",
+            "description": "Aggregate all CDE logs in a centralized SIEM for analysis and alerting",
+            "severity": "high",
+            "pci_dss_requirement": "10.4.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Stream CloudTrail and VPC Flow Logs to a SIEM (e.g., Splunk, Elastic, Amazon Security Lake)",
+            "aws_config_rule": null
+          },
+          {
+            "id": "LOG-007",
+            "name": "Alerts for Critical Security Events",
+            "description": "Automated alerts must be configured for critical CDE events: root login, failed access, privilege escalation",
+            "severity": "critical",
+            "pci_dss_requirement": "10.7.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Create CloudWatch alarms and GuardDuty findings routed to SNS for immediate alerting",
+            "aws_config_rule": "cloudwatch-alarm-action-check"
+          },
+          {
+            "id": "LOG-008",
+            "name": "Audit Log Access Restricted",
+            "description": "Access to CDE audit logs must be restricted to authorized personnel only; logs must be tamper-evident",
+            "severity": "high",
+            "pci_dss_requirement": "10.3.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Apply S3 bucket policies and IAM restrictions on log buckets; enable S3 Object Lock",
+            "aws_config_rule": null
+          },
+          {
+            "id": "LOG-009",
+            "name": "S3 Object Lock on Log Buckets",
+            "description": "Use S3 Object Lock (WORM) on CloudTrail log buckets to prevent log deletion or modification",
+            "severity": "high",
+            "pci_dss_requirement": "10.3.3",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable S3 Object Lock in compliance mode on all CloudTrail log destination buckets",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "vulnerability_testing": {
+        "category": "Requirement 11 - Test Security Regularly",
+        "checks": [
+          {
+            "id": "TEST-001",
+            "name": "Quarterly Vulnerability Scans (ASV)",
+            "description": "Quarterly external vulnerability scans by an Approved Scanning Vendor (ASV) are required",
+            "severity": "critical",
+            "pci_dss_requirement": "11.3.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Engage a PCI SSC-approved ASV; schedule and complete quarterly external scans",
+            "aws_config_rule": null
+          },
+          {
+            "id": "TEST-002",
+            "name": "Annual Penetration Test of CDE",
+            "description": "Annual penetration testing of CDE network and application layers by qualified testers",
+            "severity": "critical",
+            "pci_dss_requirement": "11.4.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Engage qualified penetration testers annually; remediate all high/critical findings",
+            "aws_config_rule": null
+          },
+          {
+            "id": "TEST-003",
+            "name": "Internal Vulnerability Scans Quarterly",
+            "description": "Quarterly internal vulnerability scans of the CDE and all systems connected to it",
+            "severity": "high",
+            "pci_dss_requirement": "11.3.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Use AWS Inspector or third-party scanner for quarterly internal scans",
+            "aws_config_rule": null
+          },
+          {
+            "id": "TEST-004",
+            "name": "Segmentation Testing Every 6 Months",
+            "description": "Penetration testing to verify CDE segmentation controls are effective at least every 6 months",
+            "severity": "critical",
+            "pci_dss_requirement": "11.4.5",
+            "pci_dss_version": "v4.0",
+            "remediation": "Include segmentation testing in pen test scope; document results and remediation",
+            "aws_config_rule": null
+          },
+          {
+            "id": "TEST-005",
+            "name": "IDS/IPS on CDE Network",
+            "description": "Intrusion detection/prevention systems must monitor all traffic at the CDE perimeter and within critical segments",
+            "severity": "high",
+            "pci_dss_requirement": "11.5.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Deploy AWS Network Firewall or a third-party IDS/IPS solution on CDE network boundaries",
+            "aws_config_rule": null
+          },
+          {
+            "id": "TEST-006",
+            "name": "File Integrity Monitoring (FIM) on CDE Systems",
+            "description": "Deploy FIM solutions on CDE systems to detect unauthorized modification of critical files",
+            "severity": "high",
+            "pci_dss_requirement": "11.5.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Deploy a FIM solution (e.g., AWS Systems Manager, Tripwire) on all CDE EC2 instances",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "kms_and_secrets": {
+        "category": "Requirement 3 & 8 - Key and Secret Management",
+        "checks": [
+          {
+            "id": "KMS-001",
+            "name": "KMS CMK Used for CDE Encryption",
+            "description": "Use KMS customer-managed keys for all encryption of cardholder data; avoid AWS-managed keys where possible",
+            "severity": "critical",
+            "pci_dss_requirement": "3.7.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Create and use CMKs for all CDE data stores; document key custodians and procedures",
+            "aws_config_rule": null
+          },
+          {
+            "id": "KMS-002",
+            "name": "KMS Key Rotation Enabled",
+            "description": "Automatic annual key rotation must be enabled for all KMS CMKs used in the CDE",
+            "severity": "high",
+            "pci_dss_requirement": "3.7.4",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable automatic key rotation on all CDE KMS CMKs",
+            "aws_config_rule": "cmk-backing-key-rotation-enabled"
+          },
+          {
+            "id": "KMS-003",
+            "name": "Secrets Manager for All CDE Credentials",
+            "description": "All passwords, API keys, and database credentials for CDE systems must be stored in AWS Secrets Manager",
+            "severity": "critical",
+            "pci_dss_requirement": "8.2.2",
+            "pci_dss_version": "v4.0",
+            "remediation": "Migrate all hardcoded secrets to AWS Secrets Manager; enable automatic rotation",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "guardduty_and_security_hub": {
+        "category": "Requirement 10 & 11 - Threat Detection",
+        "checks": [
+          {
+            "id": "GD-001",
+            "name": "GuardDuty Enabled in All CDE Regions",
+            "description": "Enable GuardDuty in all regions containing CDE resources for continuous threat detection",
+            "severity": "critical",
+            "pci_dss_requirement": "10.7.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable GuardDuty in all active CDE regions; configure SNS alerts for high-severity findings",
+            "aws_config_rule": "guardduty-enabled-centralized"
+          },
+          {
+            "id": "SH-001",
+            "name": "AWS Security Hub PCI DSS Standard Enabled",
+            "description": "Enable the PCI DSS security standard in AWS Security Hub for automated compliance checking",
+            "severity": "high",
+            "pci_dss_requirement": "2.2.1",
+            "pci_dss_version": "v4.0",
+            "remediation": "Enable Security Hub and activate the PCI DSS v3.2.1/v4.0 standard",
+            "aws_config_rule": "securityhub-enabled"
+          }
+        ]
+      }
+    },
+    "company_process_checks": {
+      "governance_and_policies": {
+        "category": "Requirement 12 - Information Security Policy",
+        "checks": [
+          {
+            "id": "GOV-001",
+            "name": "Information Security Policy Documented and Reviewed Annually",
+            "description": "An overall information security policy that addresses all PCI DSS requirements must be documented and reviewed at least annually",
+            "severity": "critical",
+            "pci_dss_requirement": "12.1.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Information security policy", "Annual review record", "Management approval sign-off"]
+          },
+          {
+            "id": "GOV-002",
+            "name": "PCI DSS Scope Defined and Documented",
+            "description": "The CDE scope, including all in-scope systems, people, and processes, must be formally defined and documented",
+            "severity": "critical",
+            "pci_dss_requirement": "12.5.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Scope definition document", "Network diagram", "Data flow diagram", "System inventory"]
+          },
+          {
+            "id": "GOV-003",
+            "name": "Annual PCI DSS Scope Review",
+            "description": "PCI DSS scope must be reviewed and confirmed at least annually and after significant changes",
+            "severity": "high",
+            "pci_dss_requirement": "12.5.2",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Annual scope review report", "Change management records", "QSA confirmation"]
+          },
+          {
+            "id": "GOV-004",
+            "name": "PCI DSS Responsibility Matrix Defined",
+            "description": "A responsibility matrix defining PCI DSS responsibility between AWS and the organization must be maintained",
+            "severity": "high",
+            "pci_dss_requirement": "12.1.3",
+            "pci_dss_version": "v4.0",
+            "evidence": ["AWS Shared Responsibility documentation", "RACI matrix", "AWS PCI DSS responsibility summary"]
+          }
+        ]
+      },
+      "risk_management": {
+        "category": "Requirement 12 - Risk Management",
+        "checks": [
+          {
+            "id": "RISK-001",
+            "name": "Annual Formal Risk Assessment",
+            "description": "A formal risk assessment that identifies critical assets, threats, and vulnerabilities related to the CDE must be performed annually",
+            "severity": "critical",
+            "pci_dss_requirement": "12.3.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Risk assessment report", "Asset inventory", "Threat/vulnerability analysis", "Risk register"]
+          },
+          {
+            "id": "RISK-002",
+            "name": "Third-Party / Vendor Risk Management",
+            "description": "All third-party vendors with access to the CDE or cardholder data must be assessed for PCI DSS compliance",
+            "severity": "critical",
+            "pci_dss_requirement": "12.8.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Vendor inventory", "Vendor PCI DSS AOC or questionnaire", "Vendor contracts with security requirements"]
+          },
+          {
+            "id": "RISK-003",
+            "name": "Service Provider List Maintained",
+            "description": "Maintain a list of all service providers with access to cardholder data, including their PCI DSS compliance status",
+            "severity": "high",
+            "pci_dss_requirement": "12.8.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Service provider register", "AOC/SAQ records from providers", "Annual compliance confirmation records"]
+          }
+        ]
+      },
+      "incident_response": {
+        "category": "Requirement 12 - Incident Response",
+        "checks": [
+          {
+            "id": "IR-001",
+            "name": "Incident Response Plan for CDE",
+            "description": "A documented incident response plan specific to CDE breaches and payment card compromises must exist",
+            "severity": "critical",
+            "pci_dss_requirement": "12.10.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Incident response plan", "Card brand notification procedures", "Breach response playbook"]
+          },
+          {
+            "id": "IR-002",
+            "name": "IRP Tested Annually",
+            "description": "The incident response plan must be tested at least once per year",
+            "severity": "high",
+            "pci_dss_requirement": "12.10.2",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Tabletop exercise records", "Test results", "Lessons learned documentation"]
+          },
+          {
+            "id": "IR-003",
+            "name": "24/7 Incident Response Capability",
+            "description": "Personnel must be available 24/7 to respond to security incidents in the CDE",
+            "severity": "high",
+            "pci_dss_requirement": "12.10.3",
+            "pci_dss_version": "v4.0",
+            "evidence": ["On-call schedule", "Escalation procedures", "Security team contact records"]
+          },
+          {
+            "id": "IR-004",
+            "name": "Breach Notification Procedures",
+            "description": "Procedures for notifying card brands (Visa, Mastercard, etc.) and acquirer within required timeframes",
+            "severity": "critical",
+            "pci_dss_requirement": "12.10.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Card brand contact list", "Notification SLA documentation", "Breach log"]
+          }
+        ]
+      },
+      "security_awareness": {
+        "category": "Requirement 12 - Security Awareness Training",
+        "checks": [
+          {
+            "id": "SAT-001",
+            "name": "Annual PCI DSS Security Awareness Training",
+            "description": "All personnel with access to the CDE must complete security awareness training upon hire and annually",
+            "severity": "critical",
+            "pci_dss_requirement": "12.6.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Training completion records", "Training curriculum", "Training dates and acknowledgments"]
+          },
+          {
+            "id": "SAT-002",
+            "name": "Social Engineering / Phishing Training",
+            "description": "Training must include awareness of threats such as phishing and social engineering targeting CDE access",
+            "severity": "high",
+            "pci_dss_requirement": "12.6.3.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Phishing simulation results", "Social engineering training records"]
+          },
+          {
+            "id": "SAT-003",
+            "name": "Acceptable Use Policy Acknowledgment",
+            "description": "All personnel must acknowledge the acceptable use policy for CDE systems and cardholder data annually",
+            "severity": "high",
+            "pci_dss_requirement": "12.6.3",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Signed AUP acknowledgments", "HR records", "Annual re-attestation records"]
+          }
+        ]
+      },
+      "change_management": {
+        "category": "Requirement 6 - Change Management",
+        "checks": [
+          {
+            "id": "CHG-001",
+            "name": "Formal Change Management Process for CDE",
+            "description": "All changes to CDE systems must go through a formal approval process before implementation",
+            "severity": "critical",
+            "pci_dss_requirement": "6.5.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Change management policy", "Change request tickets with approvals", "CAB meeting records"]
+          },
+          {
+            "id": "CHG-002",
+            "name": "Security Impact Assessment for CDE Changes",
+            "description": "Security impact of CDE changes must be assessed and documented before implementation",
+            "severity": "high",
+            "pci_dss_requirement": "6.5.2",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Security impact assessment records", "Change tickets with security review sign-off"]
+          },
+          {
+            "id": "CHG-003",
+            "name": "Production Deployment Approvals",
+            "description": "All production CDE deployments require code review and explicit sign-off before deployment",
+            "severity": "high",
+            "pci_dss_requirement": "6.5.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["CI/CD pipeline configuration", "PR approval records", "Deployment logs"]
+          }
+        ]
+      },
+      "physical_security": {
+        "category": "Requirement 9 - Physical Access Controls",
+        "checks": [
+          {
+            "id": "PHY-001",
+            "name": "Physical Access to CDE Systems Restricted",
+            "description": "Physical access to any on-premises CDE components must be restricted to authorized personnel",
+            "severity": "critical",
+            "pci_dss_requirement": "9.1.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Badge access logs", "Visitor logs", "Physical access control policy"]
+          },
+          {
+            "id": "PHY-002",
+            "name": "Visitor Management Procedures",
+            "description": "Visitors accessing areas with CDE systems must be logged, badged, and escorted",
+            "severity": "high",
+            "pci_dss_requirement": "9.2.3",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Visitor log", "Visitor badge policy", "Escort procedures"]
+          },
+          {
+            "id": "PHY-003",
+            "name": "Media Containing Cardholder Data Secured",
+            "description": "All media containing cardholder data must be physically secured and access controlled",
+            "severity": "high",
+            "pci_dss_requirement": "9.4.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Media inventory", "Physical storage controls", "Media handling policy"]
+          },
+          {
+            "id": "PHY-004",
+            "name": "Secure Destruction of Media with Cardholder Data",
+            "description": "Media containing cardholder data must be destroyed securely when no longer needed",
+            "severity": "high",
+            "pci_dss_requirement": "9.4.6",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Media destruction policy", "Data destruction certificates", "Disposal records"]
+          },
+          {
+            "id": "PHY-005",
+            "name": "AWS Data Center Physical Security",
+            "description": "Verify AWS data center physical security via AWS PCI DSS AOC or SOC 2 report",
+            "severity": "medium",
+            "pci_dss_requirement": "9.1.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["AWS PCI DSS AOC", "AWS SOC 2 Type II report"]
+          }
+        ]
+      },
+      "compliance_reporting": {
+        "category": "Requirement 12 - Compliance Validation",
+        "checks": [
+          {
+            "id": "COMP-001",
+            "name": "Annual PCI DSS Assessment (QSA or SAQ)",
+            "description": "Complete an annual PCI DSS assessment via a Qualified Security Assessor (QSA) or Self-Assessment Questionnaire (SAQ) as applicable",
+            "severity": "critical",
+            "pci_dss_requirement": "12.4.1",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Report on Compliance (ROC) or SAQ", "Attestation of Compliance (AOC)", "QSA engagement records"]
+          },
+          {
+            "id": "COMP-002",
+            "name": "Compensating Controls Documented",
+            "description": "Any compensating controls used in lieu of PCI DSS requirements must be formally documented and approved",
+            "severity": "high",
+            "pci_dss_requirement": "12.4.2",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Compensating controls worksheet", "QSA approval", "Risk analysis supporting the control"]
+          },
+          {
+            "id": "COMP-003",
+            "name": "Executive Responsibility for PCI DSS Compliance",
+            "description": "A designated executive must be responsible for overall PCI DSS compliance and program management",
+            "severity": "high",
+            "pci_dss_requirement": "12.1.2",
+            "pci_dss_version": "v4.0",
+            "evidence": ["Executive designation letter", "Compliance charter", "Board-level reporting records"]
+          }
+        ]
+      }
+    }
+  }
+}

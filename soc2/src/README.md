@@ -43,7 +43,7 @@ Re-apply any hand-written implementations (e.g. `iam/iam_001.go`) if overwritten
 ## Build & run
 
 ```bash
-cd src
+cd soc2/src   # from governance/
 go mod tidy
 go build -o bin/soc2runner ./cmd/soc2runner
 ```
@@ -93,4 +93,4 @@ Each file exports:
 
 ## License
 
-MIT License — see [LICENSE](LICENSE).
+MIT License — see [LICENSE](LICENSE). All source files include `SPDX-License-Identifier: MIT` headers.

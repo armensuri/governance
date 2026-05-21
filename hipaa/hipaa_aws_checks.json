@@ -1,0 +1,897 @@
+{
+  "hipaa_compliance_checks": {
+    "metadata": {
+      "version": "1.0",
+      "created": "2026-05-21",
+      "framework": "HIPAA Security Rule (45 CFR Part 164)",
+      "regulations": [
+        "Administrative Safeguards - 45 CFR § 164.308",
+        "Physical Safeguards - 45 CFR § 164.310",
+        "Technical Safeguards - 45 CFR § 164.312",
+        "Organizational Requirements - 45 CFR § 164.314",
+        "Breach Notification Rule - 45 CFR §§ 164.400-414"
+      ],
+      "note": "AWS operates under a shared responsibility model. AWS signs a BAA covering in-scope HIPAA-eligible services."
+    },
+    "aws_resource_checks": {
+      "iam": {
+        "category": "Technical Safeguards - Access Control (§ 164.312(a)(1))",
+        "checks": [
+          {
+            "id": "IAM-001",
+            "name": "MFA Enabled for Root Account",
+            "description": "Ensure MFA is enabled on the AWS root account to prevent unauthorized access to PHI environments",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Unique user identification (Required)",
+            "remediation": "Enable hardware or virtual MFA on the root account immediately",
+            "aws_config_rule": "root-account-mfa-enabled"
+          },
+          {
+            "id": "IAM-002",
+            "name": "MFA Enabled for All IAM Users",
+            "description": "Require MFA for all IAM users with console access to systems that process PHI",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Unique user identification (Required)",
+            "remediation": "Enforce MFA via IAM policy condition or AWS Organizations SCP",
+            "aws_config_rule": "iam-user-mfa-enabled"
+          },
+          {
+            "id": "IAM-003",
+            "name": "Unique IAM User Accounts",
+            "description": "Ensure each individual has a unique IAM user; no shared credentials",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Unique user identification (Required)",
+            "remediation": "Audit and eliminate shared IAM accounts; assign individual accounts",
+            "aws_config_rule": null
+          },
+          {
+            "id": "IAM-004",
+            "name": "Automatic Logoff / Session Timeout",
+            "description": "Enforce session timeout policies for AWS console and application sessions accessing PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(2)(iii)",
+            "hipaa_specification": "Automatic logoff (Addressable)",
+            "remediation": "Configure IAM role session durations and application-level idle timeouts",
+            "aws_config_rule": null
+          },
+          {
+            "id": "IAM-005",
+            "name": "IAM Access Keys Rotated Every 90 Days",
+            "description": "Ensure IAM access keys are rotated at least every 90 days",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Unique user identification (Required)",
+            "remediation": "Rotate access keys and enforce via AWS Config rule",
+            "aws_config_rule": "access-keys-rotated"
+          },
+          {
+            "id": "IAM-006",
+            "name": "IAM Least Privilege",
+            "description": "Grant only the minimum permissions necessary to access PHI systems",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Access control (Required)",
+            "remediation": "Use IAM Access Analyzer to identify overly permissive policies and tighten them",
+            "aws_config_rule": "iam-policy-no-statements-with-admin-access"
+          },
+          {
+            "id": "IAM-007",
+            "name": "No Unused IAM Credentials",
+            "description": "Disable IAM credentials unused for more than 90 days",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Access control (Required)",
+            "remediation": "Review IAM credential report and disable or delete unused credentials",
+            "aws_config_rule": "iam-user-unused-credentials-check"
+          }
+        ]
+      },
+      "s3": {
+        "category": "Technical Safeguards - Encryption & Access (§ 164.312(a)(2)(iv), § 164.312(e)(2)(ii))",
+        "checks": [
+          {
+            "id": "S3-001",
+            "name": "S3 Buckets Storing PHI Are Not Publicly Accessible",
+            "description": "Block all public access to S3 buckets containing PHI",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Access control (Required)",
+            "remediation": "Enable S3 Block Public Access at both account and bucket level",
+            "aws_config_rule": "s3-bucket-public-read-prohibited"
+          },
+          {
+            "id": "S3-002",
+            "name": "S3 Bucket Server-Side Encryption",
+            "description": "Ensure all S3 buckets storing PHI use server-side encryption (SSE-KMS preferred)",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(2)(iv)",
+            "hipaa_specification": "Encryption and decryption (Addressable)",
+            "remediation": "Enable SSE-KMS with a CMK on all PHI buckets",
+            "aws_config_rule": "s3-bucket-server-side-encryption-enabled"
+          },
+          {
+            "id": "S3-003",
+            "name": "S3 Bucket Versioning and Backup",
+            "description": "Enable versioning on S3 buckets to protect PHI from accidental deletion",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.308(a)(7)(ii)(A)",
+            "hipaa_specification": "Data backup plan (Required)",
+            "remediation": "Enable S3 versioning and configure lifecycle policies for retention",
+            "aws_config_rule": "s3-bucket-versioning-enabled"
+          },
+          {
+            "id": "S3-004",
+            "name": "S3 Access Logging Enabled",
+            "description": "Enable S3 server access logging for all buckets containing PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(b)",
+            "hipaa_specification": "Audit controls (Required)",
+            "remediation": "Enable S3 server access logging or CloudTrail S3 data events",
+            "aws_config_rule": "s3-bucket-logging-enabled"
+          },
+          {
+            "id": "S3-005",
+            "name": "S3 Bucket SSL-Only Access",
+            "description": "Deny HTTP (non-SSL) access to S3 buckets containing PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(e)(1)",
+            "hipaa_specification": "Transmission security (Required)",
+            "remediation": "Add a bucket policy that denies s3:* when aws:SecureTransport is false",
+            "aws_config_rule": "s3-bucket-ssl-requests-only"
+          }
+        ]
+      },
+      "ec2": {
+        "category": "Technical Safeguards - Access Control & Audit (§ 164.312(a)(1), § 164.312(b))",
+        "checks": [
+          {
+            "id": "EC2-001",
+            "name": "EBS Volumes Encrypted",
+            "description": "Ensure all EBS volumes storing or processing PHI are encrypted at rest",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(2)(iv)",
+            "hipaa_specification": "Encryption and decryption (Addressable)",
+            "remediation": "Enable EBS default encryption at the AWS account level",
+            "aws_config_rule": "ec2-ebs-encryption-by-default"
+          },
+          {
+            "id": "EC2-002",
+            "name": "Security Groups Restrict Inbound Access",
+            "description": "Ensure no security group allows unrestricted inbound access (0.0.0.0/0) on sensitive ports",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Access control (Required)",
+            "remediation": "Restrict security group rules to known IP ranges and required ports only",
+            "aws_config_rule": "restricted-ssh"
+          },
+          {
+            "id": "EC2-003",
+            "name": "EC2 Instances Regularly Patched",
+            "description": "Ensure EC2 instances running PHI workloads are regularly patched",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.308(a)(5)(ii)(B)",
+            "hipaa_specification": "Protection from malicious software (Addressable)",
+            "remediation": "Use AWS Systems Manager Patch Manager with a compliant patch baseline",
+            "aws_config_rule": "ec2-managedinstance-patch-compliance-status-check"
+          },
+          {
+            "id": "EC2-004",
+            "name": "EC2 IMDSv2 Enforced",
+            "description": "Require IMDSv2 on all EC2 instances to mitigate SSRF risk",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Access control (Required)",
+            "remediation": "Set HttpTokens to 'required' on all EC2 instance metadata configurations",
+            "aws_config_rule": "ec2-imdsv2-check"
+          },
+          {
+            "id": "EC2-005",
+            "name": "No PHI on Public-Facing EC2 Instances",
+            "description": "PHI must not be stored or processed on publicly accessible EC2 instances",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Access control (Required)",
+            "remediation": "Move PHI workloads to private subnets behind a load balancer or VPN",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "rds": {
+        "category": "Technical Safeguards - Encryption & Backup (§ 164.312(a)(2)(iv), § 164.308(a)(7))",
+        "checks": [
+          {
+            "id": "RDS-001",
+            "name": "RDS Encryption at Rest",
+            "description": "Ensure all RDS instances storing PHI are encrypted at rest using KMS",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(2)(iv)",
+            "hipaa_specification": "Encryption and decryption (Addressable)",
+            "remediation": "Enable encryption at RDS instance creation; use snapshot + restore for existing instances",
+            "aws_config_rule": "rds-storage-encrypted"
+          },
+          {
+            "id": "RDS-002",
+            "name": "RDS Not Publicly Accessible",
+            "description": "Ensure RDS instances containing PHI are not publicly accessible",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Access control (Required)",
+            "remediation": "Set PubliclyAccessible to false and deploy in private subnets",
+            "aws_config_rule": "rds-instance-public-access-check"
+          },
+          {
+            "id": "RDS-003",
+            "name": "RDS Automated Backups Enabled",
+            "description": "Enable automated backups with a retention period of at least 7 days for PHI databases",
+            "severity": "critical",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.308(a)(7)(ii)(A)",
+            "hipaa_specification": "Data backup plan (Required)",
+            "remediation": "Set backup retention to 7+ days on all RDS instances storing PHI",
+            "aws_config_rule": "db-instance-backup-enabled"
+          },
+          {
+            "id": "RDS-004",
+            "name": "RDS Multi-AZ for High Availability",
+            "description": "Enable Multi-AZ for production RDS instances to ensure availability of PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.308(a)(7)(ii)(C)",
+            "hipaa_specification": "Emergency mode operation plan (Required)",
+            "remediation": "Enable Multi-AZ on production RDS instances",
+            "aws_config_rule": "rds-multi-az-support"
+          },
+          {
+            "id": "RDS-005",
+            "name": "RDS Deletion Protection Enabled",
+            "description": "Enable deletion protection on RDS instances storing PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.308(a)(7)(ii)(A)",
+            "hipaa_specification": "Data backup plan (Required)",
+            "remediation": "Enable DeletionProtection on all PHI RDS instances",
+            "aws_config_rule": "rds-instance-deletion-protection-enabled"
+          }
+        ]
+      },
+      "cloudtrail": {
+        "category": "Technical Safeguards - Audit Controls (§ 164.312(b))",
+        "checks": [
+          {
+            "id": "CT-001",
+            "name": "CloudTrail Enabled in All Regions",
+            "description": "Enable CloudTrail across all AWS regions to audit all API calls involving PHI",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(b)",
+            "hipaa_specification": "Audit controls (Required)",
+            "remediation": "Create a multi-region CloudTrail trail with management and data events",
+            "aws_config_rule": "cloud-trail-enabled"
+          },
+          {
+            "id": "CT-002",
+            "name": "CloudTrail Log File Integrity Validation",
+            "description": "Enable log file validation to detect tampering of audit logs",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(b)",
+            "hipaa_specification": "Audit controls (Required)",
+            "remediation": "Enable log file validation on all CloudTrail trails",
+            "aws_config_rule": "cloud-trail-log-file-validation-enabled"
+          },
+          {
+            "id": "CT-003",
+            "name": "CloudTrail Logs Encrypted with KMS",
+            "description": "Encrypt CloudTrail logs at rest using a KMS CMK",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(2)(iv)",
+            "hipaa_specification": "Encryption and decryption (Addressable)",
+            "remediation": "Configure CloudTrail to encrypt logs using a KMS CMK",
+            "aws_config_rule": "cloud-trail-encryption-enabled"
+          },
+          {
+            "id": "CT-004",
+            "name": "S3 Data Events Logged in CloudTrail",
+            "description": "Enable CloudTrail data events for S3 buckets storing PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(b)",
+            "hipaa_specification": "Audit controls (Required)",
+            "remediation": "Enable S3 data events in CloudTrail for PHI buckets",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "kms": {
+        "category": "Technical Safeguards - Encryption (§ 164.312(a)(2)(iv))",
+        "checks": [
+          {
+            "id": "KMS-001",
+            "name": "KMS CMK Used for PHI Encryption",
+            "description": "Use AWS KMS customer-managed keys (CMKs) for encrypting PHI at rest",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(2)(iv)",
+            "hipaa_specification": "Encryption and decryption (Addressable)",
+            "remediation": "Create and use CMKs in KMS for all PHI data stores (S3, RDS, EBS, etc.)",
+            "aws_config_rule": null
+          },
+          {
+            "id": "KMS-002",
+            "name": "KMS Key Rotation Enabled",
+            "description": "Enable automatic annual rotation for all KMS CMKs used to encrypt PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(2)(iv)",
+            "hipaa_specification": "Encryption and decryption (Addressable)",
+            "remediation": "Enable automatic key rotation on all PHI-related KMS CMKs",
+            "aws_config_rule": "cmk-backing-key-rotation-enabled"
+          },
+          {
+            "id": "KMS-003",
+            "name": "KMS Key Access Restricted",
+            "description": "Restrict KMS key usage to authorized principals only; no wildcard access",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Access control (Required)",
+            "remediation": "Audit and tighten KMS key policies to specific IAM roles and users",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "vpc": {
+        "category": "Technical Safeguards - Transmission Security (§ 164.312(e)(1))",
+        "checks": [
+          {
+            "id": "VPC-001",
+            "name": "VPC Flow Logs Enabled",
+            "description": "Enable VPC Flow Logs to monitor network traffic in PHI environments",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(b)",
+            "hipaa_specification": "Audit controls (Required)",
+            "remediation": "Enable VPC Flow Logs for all VPCs and send to CloudWatch Logs or S3",
+            "aws_config_rule": "vpc-flow-logs-enabled"
+          },
+          {
+            "id": "VPC-002",
+            "name": "PHI Systems in Private Subnets",
+            "description": "Ensure all resources processing PHI are deployed in private subnets",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(1)",
+            "hipaa_specification": "Access control (Required)",
+            "remediation": "Review subnet placement for PHI workloads; move to private subnets",
+            "aws_config_rule": null
+          },
+          {
+            "id": "VPC-003",
+            "name": "TLS Enforced for Data in Transit",
+            "description": "Ensure all PHI transmitted over networks uses TLS 1.2 or higher",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(e)(2)(ii)",
+            "hipaa_specification": "Encryption and decryption (Addressable)",
+            "remediation": "Enforce TLS on all load balancers, APIs, and application endpoints; disable TLS 1.0/1.1",
+            "aws_config_rule": "alb-http-to-https-redirection-check"
+          },
+          {
+            "id": "VPC-004",
+            "name": "No Unencrypted Data Transfers via Public Internet",
+            "description": "PHI must not traverse the public internet unencrypted; use VPN or AWS Direct Connect",
+            "severity": "critical",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(e)(1)",
+            "hipaa_specification": "Transmission security (Required)",
+            "remediation": "Use AWS VPN, Direct Connect, or VPC peering for inter-system PHI transfers",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "guardduty_and_security_hub": {
+        "category": "Technical Safeguards - Monitoring & Threat Detection (§ 164.312(b))",
+        "checks": [
+          {
+            "id": "GD-001",
+            "name": "GuardDuty Enabled in All Regions",
+            "description": "Enable GuardDuty for continuous threat detection in PHI environments",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(b)",
+            "hipaa_specification": "Audit controls (Required)",
+            "remediation": "Enable GuardDuty in all active regions and configure SNS alerting",
+            "aws_config_rule": "guardduty-enabled-centralized"
+          },
+          {
+            "id": "SH-001",
+            "name": "AWS Security Hub HIPAA Standard Enabled",
+            "description": "Enable the AWS Foundational Security Best Practices standard in Security Hub",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(b)",
+            "hipaa_specification": "Audit controls (Required)",
+            "remediation": "Enable Security Hub and activate the HIPAA-aligned security standard",
+            "aws_config_rule": "securityhub-enabled"
+          }
+        ]
+      },
+      "backup": {
+        "category": "Administrative Safeguards - Contingency Plan (§ 164.308(a)(7))",
+        "checks": [
+          {
+            "id": "BKP-001",
+            "name": "AWS Backup Enabled for PHI Resources",
+            "description": "Use AWS Backup to centrally manage and automate backups of all PHI data stores",
+            "severity": "critical",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.308(a)(7)(ii)(A)",
+            "hipaa_specification": "Data backup plan (Required)",
+            "remediation": "Create an AWS Backup plan covering RDS, DynamoDB, EBS, EFS, and S3",
+            "aws_config_rule": "dynamodb-in-backup-plan"
+          },
+          {
+            "id": "BKP-002",
+            "name": "Backup Encryption Enabled",
+            "description": "Ensure all AWS Backup vaults and backups of PHI are encrypted with KMS",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(a)(2)(iv)",
+            "hipaa_specification": "Encryption and decryption (Addressable)",
+            "remediation": "Configure AWS Backup vault with a KMS CMK",
+            "aws_config_rule": "backup-recovery-point-encrypted"
+          },
+          {
+            "id": "BKP-003",
+            "name": "Backup Restore Tested Annually",
+            "description": "Test restoration of PHI backups at least once per year",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.308(a)(7)(ii)(D)",
+            "hipaa_specification": "Testing and revision procedures (Addressable)",
+            "remediation": "Document and execute annual restore tests; record results",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "config": {
+        "category": "Administrative Safeguards - Configuration Management (§ 164.308(a)(1))",
+        "checks": [
+          {
+            "id": "CFG-001",
+            "name": "AWS Config Enabled in All Regions",
+            "description": "Enable AWS Config to track configuration changes to PHI-related resources",
+            "severity": "high",
+            "hipaa_safeguard": "Technical",
+            "hipaa_standard": "§ 164.312(b)",
+            "hipaa_specification": "Audit controls (Required)",
+            "remediation": "Enable AWS Config with a delivery channel in all active regions",
+            "aws_config_rule": "config-enabled-in-region"
+          }
+        ]
+      }
+    },
+    "company_process_checks": {
+      "administrative_safeguards": {
+        "security_management": {
+          "category": "§ 164.308(a)(1) - Security Management Process",
+          "checks": [
+            {
+              "id": "ADM-001",
+              "name": "Risk Analysis Performed",
+              "description": "Conduct a thorough and accurate risk analysis of potential risks to PHI confidentiality, integrity, and availability",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(1)(ii)(A)",
+              "hipaa_specification": "Risk analysis (Required)",
+              "evidence": ["Risk analysis report", "Asset inventory", "Threat/vulnerability list", "Management sign-off"]
+            },
+            {
+              "id": "ADM-002",
+              "name": "Risk Management Plan",
+              "description": "Implement security measures to reduce identified risks to PHI to an acceptable level",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(1)(ii)(B)",
+              "hipaa_specification": "Risk management (Required)",
+              "evidence": ["Risk management policy", "Risk register with mitigations", "Risk acceptance records"]
+            },
+            {
+              "id": "ADM-003",
+              "name": "Sanction Policy for HIPAA Violations",
+              "description": "Apply appropriate sanctions to workforce members who fail to comply with HIPAA security policies",
+              "severity": "high",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(1)(ii)(C)",
+              "hipaa_specification": "Sanction policy (Required)",
+              "evidence": ["HIPAA sanction policy", "HR disciplinary records", "Workforce acknowledgment records"]
+            },
+            {
+              "id": "ADM-004",
+              "name": "Information System Activity Review",
+              "description": "Regularly review audit logs, access reports, and security incident tracking reports",
+              "severity": "high",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(1)(ii)(D)",
+              "hipaa_specification": "Information system activity review (Required)",
+              "evidence": ["Log review procedures", "Periodic review records", "SIEM dashboard screenshots"]
+            }
+          ]
+        },
+        "workforce_management": {
+          "category": "§ 164.308(a)(3) - Workforce Security",
+          "checks": [
+            {
+              "id": "WF-001",
+              "name": "Workforce Clearance / Authorization Procedures",
+              "description": "Ensure only authorized workforce members have access to PHI",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(3)(ii)(B)",
+              "hipaa_specification": "Workforce clearance procedure (Addressable)",
+              "evidence": ["Access authorization policy", "Role-based access matrix", "Access approval records"]
+            },
+            {
+              "id": "WF-002",
+              "name": "Access Termination Procedures",
+              "description": "Immediately terminate PHI access upon workforce member termination or role change",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(3)(ii)(C)",
+              "hipaa_specification": "Termination procedures (Addressable)",
+              "evidence": ["Offboarding checklist", "HR termination records", "Access revocation logs"]
+            },
+            {
+              "id": "WF-003",
+              "name": "HIPAA Security Awareness Training",
+              "description": "Provide HIPAA security awareness training to all workforce members upon hire and annually",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(5)(i)",
+              "hipaa_specification": "Security awareness and training (Required)",
+              "evidence": ["Training curriculum", "Completion records", "Training dates and attestations"]
+            },
+            {
+              "id": "WF-004",
+              "name": "Malicious Software Protection Training",
+              "description": "Train workforce on how to guard against malicious software",
+              "severity": "high",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(5)(ii)(B)",
+              "hipaa_specification": "Protection from malicious software (Addressable)",
+              "evidence": ["Phishing simulation results", "Malware awareness training records"]
+            },
+            {
+              "id": "WF-005",
+              "name": "Password Management Training",
+              "description": "Train workforce on creating, maintaining, and protecting passwords",
+              "severity": "medium",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(5)(ii)(D)",
+              "hipaa_specification": "Password management (Addressable)",
+              "evidence": ["Password policy", "Training records", "Password manager deployment records"]
+            }
+          ]
+        },
+        "access_management": {
+          "category": "§ 164.308(a)(4) - Information Access Management",
+          "checks": [
+            {
+              "id": "ACC-001",
+              "name": "Access Authorization Policy",
+              "description": "Policies and procedures for granting access to PHI are documented and followed",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(4)(ii)(B)",
+              "hipaa_specification": "Access authorization (Addressable)",
+              "evidence": ["Access control policy", "Role-based access matrix", "Access request/approval tickets"]
+            },
+            {
+              "id": "ACC-002",
+              "name": "Minimum Necessary Access",
+              "description": "Workforce members access only the minimum PHI necessary to perform their job functions",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.514(d)",
+              "hipaa_specification": "Minimum necessary (Required)",
+              "evidence": ["Role-based access controls", "Access review records", "IAM policy documentation"]
+            },
+            {
+              "id": "ACC-003",
+              "name": "Quarterly Access Reviews",
+              "description": "Conduct quarterly reviews of user access to PHI systems",
+              "severity": "high",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(4)(ii)(C)",
+              "hipaa_specification": "Access establishment and modification (Addressable)",
+              "evidence": ["Quarterly access review reports", "Attestation sign-offs", "Revocation records"]
+            }
+          ]
+        },
+        "contingency_planning": {
+          "category": "§ 164.308(a)(7) - Contingency Plan",
+          "checks": [
+            {
+              "id": "CP-001",
+              "name": "Data Backup Plan",
+              "description": "Maintain a documented data backup plan for all PHI",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(7)(ii)(A)",
+              "hipaa_specification": "Data backup plan (Required)",
+              "evidence": ["Backup policy", "AWS Backup configuration", "Backup completion logs"]
+            },
+            {
+              "id": "CP-002",
+              "name": "Disaster Recovery Plan",
+              "description": "Maintain a disaster recovery plan with defined RTO and RPO for PHI systems",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(7)(ii)(B)",
+              "hipaa_specification": "Disaster recovery plan (Required)",
+              "evidence": ["DR plan document", "RTO/RPO definitions", "Annual DR test reports"]
+            },
+            {
+              "id": "CP-003",
+              "name": "Emergency Mode Operation Plan",
+              "description": "Maintain procedures to enable continued PHI access during an emergency",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(7)(ii)(C)",
+              "hipaa_specification": "Emergency mode operation plan (Required)",
+              "evidence": ["Emergency operations plan", "Escalation contacts", "Failover runbooks"]
+            },
+            {
+              "id": "CP-004",
+              "name": "Annual Contingency Plan Testing",
+              "description": "Test the contingency plan at least annually and revise as needed",
+              "severity": "high",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(7)(ii)(D)",
+              "hipaa_specification": "Testing and revision procedures (Addressable)",
+              "evidence": ["DR/BCP test reports", "Tabletop exercise records", "Lessons learned documentation"]
+            }
+          ]
+        },
+        "incident_response": {
+          "category": "§ 164.308(a)(6) - Security Incident Procedures",
+          "checks": [
+            {
+              "id": "IR-001",
+              "name": "Incident Response Policy",
+              "description": "Maintain documented procedures to identify, respond to, mitigate, and document security incidents",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.308(a)(6)(i)",
+              "hipaa_specification": "Security incident procedures (Required)",
+              "evidence": ["Incident response plan", "Incident log", "Post-incident reports"]
+            },
+            {
+              "id": "IR-002",
+              "name": "Breach Notification Procedures",
+              "description": "Maintain procedures for identifying and notifying affected individuals, HHS, and media (if required) within HIPAA deadlines",
+              "severity": "critical",
+              "hipaa_safeguard": "Administrative",
+              "hipaa_standard": "§ 164.400 - § 164.414",
+              "hipaa_specification": "Breach Notification Rule (Required)",
+              "evidence": ["Breach notification policy", "Breach log", "HHS breach report records", "60-day notification timeline records"]
+            }
+          ]
+        }
+      },
+      "physical_safeguards": {
+        "category": "§ 164.310 - Physical Safeguards",
+        "checks": [
+          {
+            "id": "PHY-001",
+            "name": "Facility Access Controls",
+            "description": "Limit physical access to systems that process PHI to authorized personnel only",
+            "severity": "high",
+            "hipaa_safeguard": "Physical",
+            "hipaa_standard": "§ 164.310(a)(1)",
+            "hipaa_specification": "Facility access controls (Required)",
+            "evidence": ["Badge access logs", "Visitor logs", "Physical security policy", "CCTV records"]
+          },
+          {
+            "id": "PHY-002",
+            "name": "Workstation Use Policy",
+            "description": "Establish policies governing proper use of workstations that access PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Physical",
+            "hipaa_standard": "§ 164.310(b)",
+            "hipaa_specification": "Workstation use (Required)",
+            "evidence": ["Workstation use policy", "Screen lock configuration", "Workforce acknowledgments"]
+          },
+          {
+            "id": "PHY-003",
+            "name": "Workstation Security",
+            "description": "Implement physical safeguards for workstations that access PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Physical",
+            "hipaa_standard": "§ 164.310(c)",
+            "hipaa_specification": "Workstation security (Required)",
+            "evidence": ["Device inventory", "MDM/endpoint protection records", "Physical security controls documentation"]
+          },
+          {
+            "id": "PHY-004",
+            "name": "Device and Media Controls",
+            "description": "Manage movement and disposal of hardware and electronic media containing PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Physical",
+            "hipaa_standard": "§ 164.310(d)(1)",
+            "hipaa_specification": "Device and media controls (Required)",
+            "evidence": ["Media disposal policy", "Asset disposal records", "Data destruction certificates"]
+          },
+          {
+            "id": "PHY-005",
+            "name": "AWS Data Center Physical Security",
+            "description": "Verify AWS data center physical security controls via AWS SOC 2 / ISO 27001 reports",
+            "severity": "medium",
+            "hipaa_safeguard": "Physical",
+            "hipaa_standard": "§ 164.310(a)(1)",
+            "hipaa_specification": "Facility access controls (Required)",
+            "evidence": ["AWS SOC 2 Type II report", "AWS ISO 27001 certificate", "AWS BAA"]
+          }
+        ]
+      },
+      "organizational_requirements": {
+        "category": "§ 164.314 - Organizational Requirements",
+        "checks": [
+          {
+            "id": "ORG-001",
+            "name": "Business Associate Agreement (BAA) with AWS",
+            "description": "Execute a signed BAA with AWS before using HIPAA-eligible services to store or process PHI",
+            "severity": "critical",
+            "hipaa_safeguard": "Organizational",
+            "hipaa_standard": "§ 164.308(b)(1)",
+            "hipaa_specification": "Business associate contracts (Required)",
+            "evidence": ["Signed AWS BAA", "List of HIPAA-eligible AWS services in use"]
+          },
+          {
+            "id": "ORG-002",
+            "name": "BAAs with All Business Associates",
+            "description": "Execute BAAs with all vendors and subcontractors who access or handle PHI",
+            "severity": "critical",
+            "hipaa_safeguard": "Organizational",
+            "hipaa_standard": "§ 164.308(b)(1)",
+            "hipaa_specification": "Business associate contracts (Required)",
+            "evidence": ["Vendor BAA inventory", "Signed BAA documents", "Vendor PHI data flow map"]
+          },
+          {
+            "id": "ORG-003",
+            "name": "HIPAA Privacy Officer Designated",
+            "description": "Designate a Privacy Officer responsible for HIPAA compliance",
+            "severity": "critical",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.530(a)(1)",
+            "hipaa_specification": "Personnel designations (Required)",
+            "evidence": ["Privacy Officer appointment record", "Job description", "Contact information"]
+          },
+          {
+            "id": "ORG-004",
+            "name": "HIPAA Security Officer Designated",
+            "description": "Designate a Security Officer responsible for HIPAA security policies and procedures",
+            "severity": "critical",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.308(a)(2)",
+            "hipaa_specification": "Assigned security responsibility (Required)",
+            "evidence": ["Security Officer appointment record", "Job description", "Security policy ownership records"]
+          }
+        ]
+      },
+      "policies_and_documentation": {
+        "category": "§ 164.316 - Policies and Procedures / Documentation",
+        "checks": [
+          {
+            "id": "DOC-001",
+            "name": "HIPAA Security Policies Documented",
+            "description": "Maintain written security policies and procedures for all required and addressable HIPAA standards",
+            "severity": "critical",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.316(a)",
+            "hipaa_specification": "Policies and procedures (Required)",
+            "evidence": ["HIPAA security policy library", "Policy review dates", "Management approval records"]
+          },
+          {
+            "id": "DOC-002",
+            "name": "Documentation Retained for 6 Years",
+            "description": "Retain HIPAA-related policies, procedures, and records for at least 6 years",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.316(b)(2)",
+            "hipaa_specification": "Documentation retention (Required)",
+            "evidence": ["Document retention policy", "Records management system", "Archive records"]
+          },
+          {
+            "id": "DOC-003",
+            "name": "Policies Reviewed and Updated Periodically",
+            "description": "Review and update HIPAA security documentation in response to environmental or operational changes",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.316(b)(2)(iii)",
+            "hipaa_specification": "Updates (Required)",
+            "evidence": ["Annual policy review records", "Change log", "Approval sign-offs"]
+          }
+        ]
+      },
+      "phi_data_management": {
+        "category": "Privacy Rule - PHI Handling (§ 164.502 - § 164.528)",
+        "checks": [
+          {
+            "id": "PHI-001",
+            "name": "PHI Data Inventory / Data Flow Map",
+            "description": "Maintain a complete inventory of where PHI is stored, processed, and transmitted",
+            "severity": "critical",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.308(a)(1)(ii)(A)",
+            "hipaa_specification": "Risk analysis (Required)",
+            "evidence": ["PHI data flow diagram", "Data inventory register", "System architecture documentation"]
+          },
+          {
+            "id": "PHI-002",
+            "name": "PHI De-identification Procedures",
+            "description": "Use de-identification or pseudonymization for PHI in non-production environments",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.514(a)",
+            "hipaa_specification": "De-identification of protected health information (Required)",
+            "evidence": ["De-identification policy", "Data masking configuration", "Test environment data validation"]
+          },
+          {
+            "id": "PHI-003",
+            "name": "Notice of Privacy Practices (NPP)",
+            "description": "Provide patients with a Notice of Privacy Practices describing how their PHI is used",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.520",
+            "hipaa_specification": "Notice of privacy practices (Required)",
+            "evidence": ["Published NPP", "Patient acknowledgment records", "NPP review dates"]
+          },
+          {
+            "id": "PHI-004",
+            "name": "Minimum Necessary Standard for PHI Disclosure",
+            "description": "Disclose only the minimum necessary PHI for any given purpose",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.502(b)",
+            "hipaa_specification": "Minimum necessary (Required)",
+            "evidence": ["Minimum necessary policy", "Access control records", "Disclosure log"]
+          },
+          {
+            "id": "PHI-005",
+            "name": "Patient Rights Procedures",
+            "description": "Maintain procedures for patients to access, amend, and request restrictions on their PHI",
+            "severity": "high",
+            "hipaa_safeguard": "Administrative",
+            "hipaa_standard": "§ 164.524 - § 164.526",
+            "hipaa_specification": "Access and amendment rights (Required)",
+            "evidence": ["Patient rights policy", "Request handling procedures", "Request log"]
+          }
+        ]
+      }
+    }
+  }
+}

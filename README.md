@@ -9,10 +9,17 @@ A learning workspace for **cloud and organizational compliance frameworks** — 
 ```text
 governance/
 ├── README.md                 # This file — index for all frameworks
+├── LICENSE                   # MIT (repo root)
+├── .gitignore                # Go / build artifacts
 │
 ├── soc2/                     # SOC 2 Type II (implemented)
 │   ├── soc2_aws_checks.json  # Control catalog (AWS + company process)
-│   └── src/            # Go check implementations (56 checks)
+│   └── src/                  # Go checks (56) + soc2runner CLI
+│
+├── pci-dss/                  # PCI DSS v4.0 (implemented)
+│   ├── pci_dss_aws_checks.json
+│   ├── LICENSE
+│   └── src/                  # Go checks (94) + pcidssrunner CLI
 │
 ├── fedramp/                  # FedRAMP — planned
 │   └── (reserved)
@@ -20,7 +27,7 @@ governance/
 ├── hipaa/                    # HIPAA — planned
 │   └── (reserved)
 │
-└── (future frameworks)       # e.g. PCI-DSS, ISO 27001, NIST 800-53
+└── (future frameworks)       # e.g. ISO 27001, NIST 800-53
 ```
 
 ---
@@ -30,9 +37,9 @@ governance/
 | Framework | Directory | Status | Focus |
 | --- | --- | --- | --- |
 | **SOC 2** | [`soc2/`](soc2/) | Active | Trust Service Criteria (CC, A, C, PI, P); AWS technical + company process checks |
+| **PCI DSS** | [`pci-dss/`](pci-dss/) | Active | PCI DSS v4.0; CDE network, data protection, logging, access, 94 checks |
 | **FedRAMP** | [`fedramp/`](fedramp/) | Planned | Federal cloud security (NIST 800-53 baselines, Moderate/High) |
 | **HIPAA** | [`hipaa/`](hipaa/) | Planned | PHI safeguards (Security, Privacy, Breach Notification rules) |
-| *PCI-DSS* | — | Future | Payment card data |
 | *ISO 27001* | — | Future | ISMS controls |
 | *NIST 800-53* | — | Future | Shared control catalog (often overlaps FedRAMP) |
 
@@ -44,19 +51,28 @@ governance/
 flowchart TB
     subgraph Governance["governance/"]
         SOC2[soc2/]
+        PCI[pci-dss/]
         FedRAMP[fedramp/]
         HIPAA[hipaa/]
         Future[future frameworks]
     end
 
-    subgraph SOC2Detail["soc2/ (today)"]
-        JSON[soc2_aws_checks.json]
-        Go[src/ Go checks]
-        CLI[soc2runner CLI]
+    subgraph SOC2Detail["soc2/"]
+        S2JSON[soc2_aws_checks.json]
+        S2Go[src/ Go checks]
+        S2CLI[soc2runner]
     end
 
-    JSON --> Go --> CLI
+    subgraph PCIDetail["pci-dss/"]
+        PJSON[pci_dss_aws_checks.json]
+        PGo[src/ Go checks]
+        PCLI[pcidssrunner]
+    end
+
+    S2JSON --> S2Go --> S2CLI
+    PJSON --> PGo --> PCLI
     SOC2 --> SOC2Detail
+    PCI --> PCIDetail
     FedRAMP -.->|planned| FedRAMP
     HIPAA -.->|planned| HIPAA
 ```
@@ -105,6 +121,44 @@ python3 scripts/generate_checks.py
 
 ---
 
+## PCI DSS (implemented)
+
+PCI DSS v4.0 controls for Cardholder Data Environment (CDE) workloads on AWS.
+
+### Contents
+
+| Path | Description |
+| --- | --- |
+| [`pci-dss/pci_dss_aws_checks.json`](pci-dss/pci_dss_aws_checks.json) | 94 controls: 69 AWS resource checks + 25 company process checks |
+| [`pci-dss/src/`](pci-dss/src/) | Go package — one `.go` file per check |
+| [`pci-dss/src/README.md`](pci-dss/src/README.md) | Build, run, and regenerate instructions |
+
+### AWS services covered
+
+Network (VPC, SG, NACL) · Config · S3/RDS encryption · TLS/ALB · GuardDuty · Security Hub · IAM · KMS · CloudTrail · logging · vulnerability scanning · secure development (stubs)
+
+### Quick start
+
+```bash
+cd pci-dss/src
+go mod tidy
+go build -o bin/pcidssrunner ./cmd/pcidssrunner
+
+./bin/pcidssrunner -aws                 # AWS checks only
+./bin/pcidssrunner -process             # Process checks only
+./bin/pcidssrunner -check AUTH-002      # Single check
+./bin/pcidssrunner -json                # JSON output
+```
+
+Regenerate Go files after editing the JSON catalog:
+
+```bash
+cd pci-dss/src
+python3 scripts/generate_checks.py
+```
+
+---
+
 ## FedRAMP (planned)
 
 FedRAMP authorizes cloud services for U.S. federal use based on **NIST SP 800-53** control baselines (Low, Moderate, High).
@@ -114,7 +168,7 @@ FedRAMP authorizes cloud services for U.S. federal use based on **NIST SP 800-53
 ```text
 fedramp/
 ├── fedramp_aws_checks.json     # Control catalog mapped to 800-53 / FedRAMP
-├── fedramp-code/               # Per-control Go (or policy) implementations
+├── src/                        # Per-control Go (or policy) implementations
 ├── baselines/
 │   ├── low/
 │   ├── moderate/
@@ -144,7 +198,7 @@ HIPAA Security Rule safeguards for **ePHI** (electronic protected health informa
 ```text
 hipaa/
 ├── hipaa_aws_checks.json       # Technical safeguards + organizational mapping
-├── hipaa-code/                 # Per-check implementations
+├── src/                        # Per-check implementations
 ├── safeguards/
 │   ├── administrative.md
 │   ├── physical.md
@@ -167,18 +221,20 @@ hipaa/
 ## Adding a new framework
 
 1. Create a top-level folder: `governance/<framework>/`
-2. Add `<framework>_checks.json` (or YAML) with control metadata
-3. Add `<framework>-code/` with one file per check and a registry
-4. Add `<framework>/README.md` with run instructions
-5. Update this file’s table and layout diagram
+2. Add `<framework>_aws_checks.json` (or YAML) with control metadata
+3. Add `src/` with one file per check, `pkg/check/`, `registry/`, and `scripts/generate_checks.py`
+4. Add `cmd/<framework>runner/` CLI and `src/README.md` with run instructions
+5. Copy or symlink MIT `LICENSE` at framework root and under `src/`
+6. Update this file’s table, layout diagram, and roadmap
 
 Suggested naming:
 
 | Item | Pattern |
 | --- | --- |
 | Catalog | `{framework}_aws_checks.json` |
-| Code | `{framework}-code/` |
-| CLI | `cmd/{framework}runner/` |
+| Code | `src/` (Go module per framework) |
+| CLI | `src/cmd/{framework}runner/` |
+| Generator | `src/scripts/generate_checks.py` |
 
 ---
 
@@ -210,10 +266,14 @@ PR / push
   → publish report artifact
 ```
 
-Example (SOC 2):
+Examples:
 
 ```bash
+# SOC 2
 cd soc2/src && go test ./... && ./bin/soc2runner -aws -json > report.json
+
+# PCI DSS
+cd pci-dss/src && go test ./... && ./bin/pcidssrunner -aws -json > report.json
 ```
 
 FedRAMP and HIPAA runners will follow the same pattern when added.
@@ -226,12 +286,16 @@ FedRAMP and HIPAA runners will follow the same pattern when added.
 | --- | --- |
 | SOC 2 check catalog | [`soc2/soc2_aws_checks.json`](soc2/soc2_aws_checks.json) |
 | SOC 2 Go implementation | [`soc2/src/README.md`](soc2/src/README.md) |
+| PCI DSS check catalog | [`pci-dss/pci_dss_aws_checks.json`](pci-dss/pci_dss_aws_checks.json) |
+| PCI DSS Go implementation | [`pci-dss/src/README.md`](pci-dss/src/README.md) |
+| MIT license (bulk headers) | [`../scripts/add_mit_license.py`](../scripts/add_mit_license.py) |
 
 ---
 
 ## Roadmap
 
 - [x] SOC 2 — JSON catalog + 56 Go checks + CLI
+- [x] PCI DSS — JSON catalog + 94 Go checks + CLI
 - [ ] FedRAMP — NIST 800-53 Moderate baseline catalog
 - [ ] HIPAA — ePHI technical safeguard checks
 - [ ] Shared `pkg/governance` types across frameworks (optional)
@@ -243,3 +307,9 @@ FedRAMP and HIPAA runners will follow the same pattern when added.
 ## License
 
 MIT License — see [LICENSE](LICENSE).
+
+| Path | Notes |
+| --- | --- |
+| `soc2/src/LICENSE` | Module-level license copy |
+| `pci-dss/LICENSE`, `pci-dss/src/LICENSE` | Framework + module copies |
+| All `.go` sources | `SPDX-License-Identifier: MIT` in file headers (via generator or `add_mit_license.py`) |
