@@ -1,0 +1,61 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+soc2/src/bin/
+soc2runner
+
+# Test binary, built with `go test -c`
+*.test
+
+# Code coverage profiles and reports
+*.out
+coverage.*
+*.coverprofile
+coverage.html
+
+# Go workspace file (local multi-module dev)
+go.work
+go.work.sum
+
+# Dependency directories (if vendoring locally)
+vendor/
+
+# Module download cache (should not be in repo)
+# pkg/ is legacy GOPATH — ignore if present
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# AWS / local credentials
+*.pem
+*.key
+credentials
+.aws/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Debug
+debug
+__debug_bin
+*.log
+
+# Terraform / infra artifacts (if added later)
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# OS
+Thumbs.db
