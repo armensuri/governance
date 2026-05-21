@@ -1,0 +1,573 @@
+{
+  "soc2_compliance_checks": {
+    "metadata": {
+      "version": "1.0",
+      "created": "2026-05-21",
+      "framework": "SOC 2 Type II",
+      "trust_service_criteria": ["CC", "A", "C", "PI", "P"]
+    },
+    "aws_resource_checks": {
+      "iam": {
+        "category": "CC6 - Logical and Physical Access Controls",
+        "checks": [
+          {
+            "id": "IAM-001",
+            "name": "MFA Enabled for Root Account",
+            "description": "Ensure MFA is enabled on the root AWS account",
+            "severity": "critical",
+            "soc2_criteria": ["CC6.1", "CC6.2"],
+            "remediation": "Enable MFA on root account via AWS IAM console",
+            "aws_config_rule": "root-account-mfa-enabled"
+          },
+          {
+            "id": "IAM-002",
+            "name": "MFA Enabled for IAM Users",
+            "description": "Ensure MFA is enabled for all IAM users with console access",
+            "severity": "high",
+            "soc2_criteria": ["CC6.1", "CC6.2"],
+            "remediation": "Enforce MFA via IAM password policy or SCPs",
+            "aws_config_rule": "iam-user-mfa-enabled"
+          },
+          {
+            "id": "IAM-003",
+            "name": "No Unused IAM Credentials",
+            "description": "Disable or remove IAM credentials unused for 90+ days",
+            "severity": "high",
+            "soc2_criteria": ["CC6.2", "CC6.3"],
+            "remediation": "Audit IAM credential report and disable stale credentials",
+            "aws_config_rule": "iam-user-unused-credentials-check"
+          },
+          {
+            "id": "IAM-004",
+            "name": "IAM Policies Least Privilege",
+            "description": "Ensure IAM policies follow principle of least privilege",
+            "severity": "high",
+            "soc2_criteria": ["CC6.3"],
+            "remediation": "Review and tighten IAM policies using IAM Access Analyzer",
+            "aws_config_rule": "iam-policy-no-statements-with-admin-access"
+          },
+          {
+            "id": "IAM-005",
+            "name": "No Inline IAM Policies",
+            "description": "Avoid use of inline IAM policies; use managed policies instead",
+            "severity": "medium",
+            "soc2_criteria": ["CC6.3"],
+            "remediation": "Convert inline policies to managed policies",
+            "aws_config_rule": "iam-no-inline-policy-check"
+          },
+          {
+            "id": "IAM-006",
+            "name": "IAM Access Keys Rotated",
+            "description": "Ensure IAM access keys are rotated every 90 days",
+            "severity": "high",
+            "soc2_criteria": ["CC6.1", "CC6.2"],
+            "remediation": "Rotate access keys and enforce rotation policy",
+            "aws_config_rule": "access-keys-rotated"
+          }
+        ]
+      },
+      "s3": {
+        "category": "CC6 - Logical and Physical Access Controls / C1 - Confidentiality",
+        "checks": [
+          {
+            "id": "S3-001",
+            "name": "S3 Bucket Public Access Blocked",
+            "description": "Ensure all S3 buckets block public access",
+            "severity": "critical",
+            "soc2_criteria": ["CC6.1", "C1.1"],
+            "remediation": "Enable S3 Block Public Access at account and bucket level",
+            "aws_config_rule": "s3-bucket-public-read-prohibited"
+          },
+          {
+            "id": "S3-002",
+            "name": "S3 Bucket Encryption Enabled",
+            "description": "Ensure S3 buckets have server-side encryption enabled",
+            "severity": "high",
+            "soc2_criteria": ["CC6.7", "C1.1"],
+            "remediation": "Enable SSE-S3 or SSE-KMS on all S3 buckets",
+            "aws_config_rule": "s3-bucket-server-side-encryption-enabled"
+          },
+          {
+            "id": "S3-003",
+            "name": "S3 Bucket Versioning Enabled",
+            "description": "Enable versioning on S3 buckets storing critical data",
+            "severity": "medium",
+            "soc2_criteria": ["A1.2", "CC7.5"],
+            "remediation": "Enable versioning and configure lifecycle policies",
+            "aws_config_rule": "s3-bucket-versioning-enabled"
+          },
+          {
+            "id": "S3-004",
+            "name": "S3 Bucket Logging Enabled",
+            "description": "Ensure S3 access logging is enabled on all buckets",
+            "severity": "medium",
+            "soc2_criteria": ["CC7.2", "CC7.3"],
+            "remediation": "Enable S3 server access logging or CloudTrail S3 data events",
+            "aws_config_rule": "s3-bucket-logging-enabled"
+          },
+          {
+            "id": "S3-005",
+            "name": "S3 Bucket MFA Delete Enabled",
+            "description": "Enable MFA Delete on critical S3 buckets",
+            "severity": "medium",
+            "soc2_criteria": ["CC6.1", "A1.2"],
+            "remediation": "Enable MFA Delete on S3 buckets with sensitive data",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "ec2": {
+        "category": "CC6 - Logical and Physical Access Controls / CC7 - System Operations",
+        "checks": [
+          {
+            "id": "EC2-001",
+            "name": "No Default VPC Usage",
+            "description": "Avoid using the default VPC for production workloads",
+            "severity": "medium",
+            "soc2_criteria": ["CC6.1", "CC6.6"],
+            "remediation": "Create a custom VPC with proper network segmentation",
+            "aws_config_rule": "vpc-default-security-group-closed"
+          },
+          {
+            "id": "EC2-002",
+            "name": "Security Groups Restrict Inbound",
+            "description": "Ensure no security group allows unrestricted inbound access (0.0.0.0/0) on sensitive ports",
+            "severity": "critical",
+            "soc2_criteria": ["CC6.1", "CC6.6"],
+            "remediation": "Restrict security group inbound rules to known CIDRs",
+            "aws_config_rule": "restricted-ssh"
+          },
+          {
+            "id": "EC2-003",
+            "name": "EBS Volume Encryption",
+            "description": "Ensure all EBS volumes are encrypted at rest",
+            "severity": "high",
+            "soc2_criteria": ["CC6.7", "C1.1"],
+            "remediation": "Enable EBS default encryption at the account level",
+            "aws_config_rule": "ec2-ebs-encryption-by-default"
+          },
+          {
+            "id": "EC2-004",
+            "name": "EC2 Instances Patched",
+            "description": "Ensure EC2 instances are regularly patched using AWS Systems Manager Patch Manager",
+            "severity": "high",
+            "soc2_criteria": ["CC7.1", "CC7.2"],
+            "remediation": "Configure SSM Patch Manager with a patch baseline",
+            "aws_config_rule": "ec2-managedinstance-patch-compliance-status-check"
+          },
+          {
+            "id": "EC2-005",
+            "name": "EC2 IMDSv2 Enforced",
+            "description": "Require IMDSv2 on all EC2 instances to prevent SSRF attacks",
+            "severity": "high",
+            "soc2_criteria": ["CC6.1", "CC6.6"],
+            "remediation": "Set HttpTokens to 'required' on all EC2 instances",
+            "aws_config_rule": "ec2-imdsv2-check"
+          }
+        ]
+      },
+      "rds": {
+        "category": "CC6 - Logical and Physical Access Controls / C1 - Confidentiality",
+        "checks": [
+          {
+            "id": "RDS-001",
+            "name": "RDS Encryption at Rest",
+            "description": "Ensure all RDS instances are encrypted at rest",
+            "severity": "critical",
+            "soc2_criteria": ["CC6.7", "C1.1"],
+            "remediation": "Enable encryption when creating RDS instances; snapshot + restore for existing",
+            "aws_config_rule": "rds-storage-encrypted"
+          },
+          {
+            "id": "RDS-002",
+            "name": "RDS Not Publicly Accessible",
+            "description": "Ensure RDS instances are not publicly accessible",
+            "severity": "critical",
+            "soc2_criteria": ["CC6.1", "CC6.6"],
+            "remediation": "Set PubliclyAccessible to false and place in private subnet",
+            "aws_config_rule": "rds-instance-public-access-check"
+          },
+          {
+            "id": "RDS-003",
+            "name": "RDS Automated Backups Enabled",
+            "description": "Ensure RDS automated backups are enabled with retention >= 7 days",
+            "severity": "high",
+            "soc2_criteria": ["A1.2", "CC7.5"],
+            "remediation": "Set backup retention period to at least 7 days",
+            "aws_config_rule": "db-instance-backup-enabled"
+          },
+          {
+            "id": "RDS-004",
+            "name": "RDS Multi-AZ Enabled",
+            "description": "Enable Multi-AZ for production RDS instances",
+            "severity": "medium",
+            "soc2_criteria": ["A1.1", "A1.2"],
+            "remediation": "Enable Multi-AZ deployment for production databases",
+            "aws_config_rule": "rds-multi-az-support"
+          },
+          {
+            "id": "RDS-005",
+            "name": "RDS Minor Version Auto-Upgrade",
+            "description": "Enable automatic minor version upgrades for RDS",
+            "severity": "medium",
+            "soc2_criteria": ["CC7.1"],
+            "remediation": "Enable AutoMinorVersionUpgrade on RDS instances",
+            "aws_config_rule": "rds-automatic-minor-version-upgrade-enabled"
+          }
+        ]
+      },
+      "cloudtrail": {
+        "category": "CC7 - System Operations / CC4 - Monitoring",
+        "checks": [
+          {
+            "id": "CT-001",
+            "name": "CloudTrail Enabled in All Regions",
+            "description": "Ensure CloudTrail is enabled across all AWS regions",
+            "severity": "critical",
+            "soc2_criteria": ["CC7.2", "CC7.3"],
+            "remediation": "Create a multi-region CloudTrail trail",
+            "aws_config_rule": "cloud-trail-enabled"
+          },
+          {
+            "id": "CT-002",
+            "name": "CloudTrail Log File Validation",
+            "description": "Ensure CloudTrail log file integrity validation is enabled",
+            "severity": "high",
+            "soc2_criteria": ["CC7.2", "PI1.5"],
+            "remediation": "Enable log file validation on CloudTrail trail",
+            "aws_config_rule": "cloud-trail-log-file-validation-enabled"
+          },
+          {
+            "id": "CT-003",
+            "name": "CloudTrail Logs Encrypted",
+            "description": "Ensure CloudTrail logs are encrypted with KMS",
+            "severity": "high",
+            "soc2_criteria": ["CC6.7", "C1.1"],
+            "remediation": "Configure CloudTrail to use a KMS CMK for log encryption",
+            "aws_config_rule": "cloud-trail-encryption-enabled"
+          },
+          {
+            "id": "CT-004",
+            "name": "CloudWatch Alarms for CloudTrail Events",
+            "description": "Set up CloudWatch metric filters and alarms for key CloudTrail events",
+            "severity": "high",
+            "soc2_criteria": ["CC7.2", "CC7.3"],
+            "remediation": "Create metric filters for root login, unauthorized API calls, MFA changes",
+            "aws_config_rule": "cloudwatch-alarm-action-check"
+          }
+        ]
+      },
+      "kms": {
+        "category": "CC6 - Logical and Physical Access Controls / C1 - Confidentiality",
+        "checks": [
+          {
+            "id": "KMS-001",
+            "name": "KMS Key Rotation Enabled",
+            "description": "Ensure automatic annual key rotation is enabled for KMS CMKs",
+            "severity": "high",
+            "soc2_criteria": ["CC6.1", "CC6.7"],
+            "remediation": "Enable key rotation on all applicable KMS CMKs",
+            "aws_config_rule": "cmk-backing-key-rotation-enabled"
+          },
+          {
+            "id": "KMS-002",
+            "name": "KMS Key Policies Restrict Access",
+            "description": "Ensure KMS key policies do not allow wildcard principal access",
+            "severity": "high",
+            "soc2_criteria": ["CC6.1", "CC6.3"],
+            "remediation": "Review and restrict KMS key policies to specific principals",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "vpc": {
+        "category": "CC6 - Logical and Physical Access Controls",
+        "checks": [
+          {
+            "id": "VPC-001",
+            "name": "VPC Flow Logs Enabled",
+            "description": "Enable VPC Flow Logs for all VPCs",
+            "severity": "high",
+            "soc2_criteria": ["CC7.2", "CC7.3"],
+            "remediation": "Enable VPC Flow Logs and send to CloudWatch Logs or S3",
+            "aws_config_rule": "vpc-flow-logs-enabled"
+          },
+          {
+            "id": "VPC-002",
+            "name": "Network ACLs Restrict Traffic",
+            "description": "Ensure Network ACLs do not allow unrestricted inbound/outbound traffic",
+            "severity": "medium",
+            "soc2_criteria": ["CC6.1", "CC6.6"],
+            "remediation": "Configure NACLs with explicit allow/deny rules",
+            "aws_config_rule": null
+          }
+        ]
+      },
+      "guardduty": {
+        "category": "CC7 - System Operations / Threat Detection",
+        "checks": [
+          {
+            "id": "GD-001",
+            "name": "GuardDuty Enabled",
+            "description": "Ensure GuardDuty is enabled in all regions",
+            "severity": "high",
+            "soc2_criteria": ["CC7.2", "CC7.3"],
+            "remediation": "Enable GuardDuty and configure alerting via SNS",
+            "aws_config_rule": "guardduty-enabled-centralized"
+          }
+        ]
+      },
+      "config": {
+        "category": "CC7 - System Operations / Change Management",
+        "checks": [
+          {
+            "id": "CFG-001",
+            "name": "AWS Config Enabled",
+            "description": "Ensure AWS Config is enabled in all regions to track configuration changes",
+            "severity": "high",
+            "soc2_criteria": ["CC7.1", "CC7.2"],
+            "remediation": "Enable AWS Config with a delivery channel in all regions",
+            "aws_config_rule": "config-enabled-in-region"
+          }
+        ]
+      }
+    },
+    "company_process_checks": {
+      "security_policies": {
+        "category": "CC1 - Control Environment / CC2 - Communication and Information",
+        "checks": [
+          {
+            "id": "POL-001",
+            "name": "Information Security Policy Documented",
+            "description": "Company maintains a written information security policy reviewed annually",
+            "severity": "critical",
+            "soc2_criteria": ["CC1.1", "CC2.2"],
+            "evidence": ["Information Security Policy document", "Annual review sign-off records"]
+          },
+          {
+            "id": "POL-002",
+            "name": "Acceptable Use Policy",
+            "description": "Employees acknowledge an Acceptable Use Policy for company assets and systems",
+            "severity": "high",
+            "soc2_criteria": ["CC1.4", "CC6.3"],
+            "evidence": ["Signed AUP acknowledgments", "Onboarding records"]
+          },
+          {
+            "id": "POL-003",
+            "name": "Incident Response Plan",
+            "description": "A documented Incident Response Plan (IRP) is in place and tested annually",
+            "severity": "critical",
+            "soc2_criteria": ["CC7.3", "CC7.4", "CC7.5"],
+            "evidence": ["IRP document", "Tabletop exercise records", "Post-incident reports"]
+          },
+          {
+            "id": "POL-004",
+            "name": "Change Management Policy",
+            "description": "Formal change management process with approvals for production changes",
+            "severity": "high",
+            "soc2_criteria": ["CC8.1"],
+            "evidence": ["Change management policy", "Change request tickets", "Approval records"]
+          },
+          {
+            "id": "POL-005",
+            "name": "Business Continuity / Disaster Recovery Plan",
+            "description": "BCP/DRP is documented, tested at least annually, and includes AWS failover procedures",
+            "severity": "critical",
+            "soc2_criteria": ["A1.2", "A1.3", "CC7.5"],
+            "evidence": ["BCP/DRP documents", "DR test reports", "RTO/RPO documentation"]
+          }
+        ]
+      },
+      "access_management": {
+        "category": "CC6 - Logical and Physical Access Controls",
+        "checks": [
+          {
+            "id": "ACC-001",
+            "name": "User Access Review",
+            "description": "Conduct quarterly access reviews for all systems including AWS",
+            "severity": "critical",
+            "soc2_criteria": ["CC6.2", "CC6.3"],
+            "evidence": ["Access review reports", "Attestation sign-offs", "Revocation records"]
+          },
+          {
+            "id": "ACC-002",
+            "name": "Onboarding / Offboarding Procedures",
+            "description": "Formal procedures ensure timely provisioning and de-provisioning of access",
+            "severity": "critical",
+            "soc2_criteria": ["CC6.2", "CC6.3"],
+            "evidence": ["HR onboarding checklists", "Termination checklists", "Ticket history"]
+          },
+          {
+            "id": "ACC-003",
+            "name": "Privileged Access Management",
+            "description": "Privileged access (admin, root) is restricted, monitored, and reviewed",
+            "severity": "critical",
+            "soc2_criteria": ["CC6.3", "CC6.8"],
+            "evidence": ["PAM policy", "Admin user list", "Privileged session logs"]
+          },
+          {
+            "id": "ACC-004",
+            "name": "Vendor / Third-Party Access Controls",
+            "description": "Third-party access to systems is formally approved, limited, and reviewed",
+            "severity": "high",
+            "soc2_criteria": ["CC6.2", "CC9.2"],
+            "evidence": ["Vendor access agreements", "NDA records", "Third-party access logs"]
+          }
+        ]
+      },
+      "risk_management": {
+        "category": "CC3 - Risk Assessment / CC9 - Risk Mitigation",
+        "checks": [
+          {
+            "id": "RISK-001",
+            "name": "Annual Risk Assessment",
+            "description": "Company performs a formal risk assessment at least annually",
+            "severity": "critical",
+            "soc2_criteria": ["CC3.1", "CC3.2", "CC3.3"],
+            "evidence": ["Risk assessment report", "Risk register", "Management sign-off"]
+          },
+          {
+            "id": "RISK-002",
+            "name": "Vendor Risk Management",
+            "description": "Third-party vendors handling company data are assessed for security controls",
+            "severity": "high",
+            "soc2_criteria": ["CC9.2"],
+            "evidence": ["Vendor security questionnaires", "SOC 2 reports from vendors", "Vendor inventory"]
+          },
+          {
+            "id": "RISK-003",
+            "name": "Vulnerability Management Program",
+            "description": "Regular vulnerability scanning and penetration testing are conducted",
+            "severity": "high",
+            "soc2_criteria": ["CC7.1", "CC7.2"],
+            "evidence": ["Vulnerability scan reports", "Penetration test reports", "Remediation tracking"]
+          }
+        ]
+      },
+      "hr_security": {
+        "category": "CC1 - Control Environment",
+        "checks": [
+          {
+            "id": "HR-001",
+            "name": "Background Checks",
+            "description": "Background checks are performed for all employees prior to system access",
+            "severity": "high",
+            "soc2_criteria": ["CC1.4"],
+            "evidence": ["Background check policy", "HR records showing completion"]
+          },
+          {
+            "id": "HR-002",
+            "name": "Security Awareness Training",
+            "description": "All employees complete security awareness training annually",
+            "severity": "high",
+            "soc2_criteria": ["CC1.4", "CC2.2"],
+            "evidence": ["Training completion records", "Training content", "Phishing simulation results"]
+          },
+          {
+            "id": "HR-003",
+            "name": "Code of Conduct",
+            "description": "All employees review and sign a Code of Conduct upon hire and annually",
+            "severity": "medium",
+            "soc2_criteria": ["CC1.1", "CC1.2"],
+            "evidence": ["Signed Code of Conduct records", "Onboarding documentation"]
+          }
+        ]
+      },
+      "monitoring_and_logging": {
+        "category": "CC4 - Monitoring / CC7 - System Operations",
+        "checks": [
+          {
+            "id": "MON-001",
+            "name": "Centralized Log Management",
+            "description": "Logs from all systems (AWS, application, infrastructure) are aggregated centrally",
+            "severity": "high",
+            "soc2_criteria": ["CC7.2", "CC7.3"],
+            "evidence": ["SIEM/log aggregation configuration", "Log retention policy"]
+          },
+          {
+            "id": "MON-002",
+            "name": "Security Alerting and Response",
+            "description": "Alerts are configured for security events and reviewed by the security team",
+            "severity": "high",
+            "soc2_criteria": ["CC7.3", "CC7.4"],
+            "evidence": ["Alert configuration records", "On-call runbooks", "Incident tickets"]
+          },
+          {
+            "id": "MON-003",
+            "name": "Log Retention Policy",
+            "description": "Logs are retained for a minimum of 12 months per policy",
+            "severity": "medium",
+            "soc2_criteria": ["CC7.2", "A1.2"],
+            "evidence": ["Log retention policy", "CloudWatch/S3 retention settings"]
+          }
+        ]
+      },
+      "sdlc_and_change_management": {
+        "category": "CC8 - Change Management",
+        "checks": [
+          {
+            "id": "SDLC-001",
+            "name": "Secure SDLC Practices",
+            "description": "Security is integrated into the software development lifecycle (SAST, DAST, code review)",
+            "severity": "high",
+            "soc2_criteria": ["CC8.1"],
+            "evidence": ["SAST/DAST scan results", "Code review policy", "PR approval records"]
+          },
+          {
+            "id": "SDLC-002",
+            "name": "Separation of Environments",
+            "description": "Development, staging, and production environments are logically separated",
+            "severity": "high",
+            "soc2_criteria": ["CC6.1", "CC8.1"],
+            "evidence": ["AWS account structure diagram", "Network architecture documentation"]
+          },
+          {
+            "id": "SDLC-003",
+            "name": "Production Deployment Approvals",
+            "description": "All production deployments require peer review and approval",
+            "severity": "high",
+            "soc2_criteria": ["CC8.1"],
+            "evidence": ["CI/CD pipeline configuration", "Deployment approval records"]
+          }
+        ]
+      },
+      "data_management": {
+        "category": "C1 - Confidentiality / P - Privacy",
+        "checks": [
+          {
+            "id": "DATA-001",
+            "name": "Data Classification Policy",
+            "description": "Data is classified by sensitivity (Public, Internal, Confidential, Restricted)",
+            "severity": "high",
+            "soc2_criteria": ["C1.1", "CC6.1"],
+            "evidence": ["Data classification policy", "Data inventory/map"]
+          },
+          {
+            "id": "DATA-002",
+            "name": "Data Retention and Disposal Policy",
+            "description": "Formal policies govern data retention periods and secure disposal procedures",
+            "severity": "high",
+            "soc2_criteria": ["C1.2", "P4.3"],
+            "evidence": ["Retention policy", "Disposal records", "S3 lifecycle policies"]
+          },
+          {
+            "id": "DATA-003",
+            "name": "Data Encryption in Transit",
+            "description": "All data in transit uses TLS 1.2 or higher",
+            "severity": "critical",
+            "soc2_criteria": ["CC6.7", "C1.1"],
+            "evidence": ["TLS configuration records", "Certificate inventory", "SSL Labs scan results"]
+          },
+          {
+            "id": "DATA-004",
+            "name": "Privacy Policy and GDPR/CCPA Compliance",
+            "description": "Company maintains a privacy policy and complies with applicable data privacy regulations",
+            "severity": "high",
+            "soc2_criteria": ["P1.1", "P2.1", "P3.1"],
+            "evidence": ["Privacy policy", "Privacy impact assessments", "Data subject request procedures"]
+          }
+        ]
+      }
+    }
+  }
+}
